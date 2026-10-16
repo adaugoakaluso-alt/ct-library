@@ -156,8 +156,8 @@ DATASETS: dict[str, Dataset] = {
         key=("date",),
         columns=(
             Column("date", DATE, help="Date you read the numbers."),
-            Column("subscribers", INT),
-            Column("open_rate", RATE, required=False, help="Open rate as a share. 0.42 means 42%."),
+            Column("subscribers", INT, required=False, help="Total subscribers on this date. Leave blank on rows that only record a post's open rate."),
+            Column("open_rate", RATE, required=False, help="Open rate as a share. 0.42 means 42%. Use the post's Opened figure for a per-post row."),
             Column("click_rate", RATE, required=False, help="Click-through rate as a share. 0.031 means 3.1%."),
             SOURCE,
         ),

@@ -142,7 +142,7 @@ Unique by `date`. Source: Substack dashboard, Stats page.
 | Column | Type | Required | Notes |
 | --- | --- | --- | --- |
 | date | date | yes | |
-| subscribers | whole number | yes | |
+| subscribers | whole number | no | Total subscribers. Leave blank on rows that only record a post's open rate |
 | open_rate | rate | no | `0.42` means 42% |
 | click_rate | rate | no | |
 
