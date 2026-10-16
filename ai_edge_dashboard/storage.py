@@ -171,8 +171,17 @@ def save(name: str, new_rows: pd.DataFrame, mode: str = "append") -> int:
         key = list(ds.key)
         new_rows = new_rows.drop_duplicates(subset=key, keep="last").set_index(key)
         current = current.drop_duplicates(subset=key, keep="last").set_index(key)
-        combined = new_rows.combine_first(current).reset_index()
-        combined = coerce(combined, ds)
+        combined = new_rows.combine_first(current)
+        # Where a blank in the new row kept an old value, keep the old row's source too.
+        both = new_rows.index.intersection(current.index)
+        if len(both) and "source" in combined.columns:
+            values = [c for c in new_rows.columns if c != "source" and c in current.columns]
+            for k in both:
+                kept_old = any(pd.isna(new_rows.at[k, c]) and pd.notna(current.at[k, c]) for c in values)
+                old_src, new_src = current.at[k, "source"], new_rows.at[k, "source"]
+                if kept_old and pd.notna(old_src) and pd.notna(new_src) and str(old_src) not in str(new_src):
+                    combined.at[k, "source"] = f"{new_src} Earlier values: {old_src}"
+        combined = coerce(combined.reset_index(), ds)
     else:
         combined = new_rows
     combined = combined.sort_values(ds.date_column, ascending=False, na_position="last")

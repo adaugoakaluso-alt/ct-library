@@ -56,3 +56,15 @@ def test_sample_data_turns_off_once_any_real_table_exists(tmp_path, monkeypatch)
     assert tables["followers"].origin == storage.YOUR_DATA
     assert tables["manychat_clicks"].origin == storage.EMPTY
     assert tables["manychat_clicks"].df.empty
+
+
+def test_append_keeps_the_source_of_values_it_keeps(tmp_path, monkeypatch):
+    monkeypatch.setattr(config, "DATA_DIR", tmp_path)
+    ds = schemas.get("substack")
+    first, _ = storage.validate(pd.DataFrame([{"date": "2026-09-08", "open_rate": "1.0", "source": "Posts list"}]), ds)
+    storage.save("substack", first)
+    later, _ = storage.validate(pd.DataFrame([{"date": "2026-09-08", "subscribers": "1", "source": "Growth export"}]), ds)
+    storage.save("substack", later)
+    row = storage.load("substack").df.set_index("date").iloc[0]
+    assert row["subscribers"] == 1 and row["open_rate"] == 1.0
+    assert "Growth export" in row["source"] and "Posts list" in row["source"]
