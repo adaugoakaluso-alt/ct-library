@@ -1,0 +1,12 @@
+send_date,day_time_et,delivered,total_opens,unique_link_clicks,unsubscribes,source
+2026-10-12,Mon 12pm,584,401,16,4,Sample data
+2026-10-05,Mon 12pm,573,329,24,2,Sample data
+2026-09-28,Mon 12pm,557,381,31,4,Sample data
+2026-09-21,Mon 12pm,543,415,30,3,Sample data
+2026-09-14,Mon 12pm,503,282,26,0,Sample data
+2026-09-07,Mon 12pm,473,372,15,4,Sample data
+2026-08-31,Mon 12pm,461,317,15,6,Sample data
+2026-08-24,Mon 12pm,451,296,16,1,Sample data
+2026-08-17,Mon 12pm,441,342,25,0,Sample data
+2026-08-10,Mon 12pm,433,245,18,2,Sample data
+2026-08-03,Mon 12pm,425,334,37,5,Sample data

@@ -1,0 +1,38 @@
+# Your real data. Entered, uploaded or pulled numbers live here and stay off GitHub.
+data/*
+!data/.gitkeep
+uploads/
+/*.csv
+*.xlsx
+
+# Secrets and credentials
+.env
+.env.*
+!.env.example
+.streamlit/secrets.toml
+credentials*.json
+service_account*.json
+*.pem
+*.key
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+.pytest_cache/
+.coverage
+htmlcov/
+*.egg-info/
+build/
+dist/
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
+*.swp
+*~

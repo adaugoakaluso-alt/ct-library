@@ -1,0 +1,4 @@
+period_id,label,start_date,end_date,sends,delivered,open_rate_filtered,click_rate_filtered,click_to_open_filtered,unsubscribe_rate,source
+2026-08,August (4 sends),2026-08-01,2026-08-31,4,1720,0.121,0.018,0.149,0.006,Sample data
+2026-09,September (4 sends),2026-09-01,2026-09-30,4,1910,0.134,0.021,0.157,0.004,Sample data
+2026-10,October to date (2 sends),2026-10-01,2026-10-15,2,1010,0.152,0.024,0.158,0.003,Sample data

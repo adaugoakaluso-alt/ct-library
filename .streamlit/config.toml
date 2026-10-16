@@ -1,0 +1,9 @@
+[theme]
+primaryColor = "#2F6FDB"
+
+[server]
+# Uploaded CSVs are small. Keep the limit low.
+maxUploadSize = 20
+
+[browser]
+gatherUsageStats = false
