@@ -158,7 +158,9 @@ def save(name: str, new_rows: pd.DataFrame, mode: str = "append") -> int:
     """Write rows to data/<name>.csv and return how many rows the file now has.
 
     mode="append" adds the rows to your existing data. A new row with the same
-    key as an existing one replaces it. mode="replace" overwrites the file.
+    key as an existing one updates it: filled-in values win, and blank values
+    keep what was there, so a Buffer pull does not wipe LinkedIn clicks that
+    came from an export. mode="replace" overwrites the file.
     Sample data is never written to or merged in.
     """
     ds = schemas.get(name)
@@ -166,8 +168,11 @@ def save(name: str, new_rows: pd.DataFrame, mode: str = "append") -> int:
     path = data_path(name)
     if mode == "append" and path.exists():
         current = load(name, allow_sample=False).df
-        combined = pd.concat([current, new_rows], ignore_index=True)
-        combined = combined.drop_duplicates(subset=list(ds.key), keep="last")
+        key = list(ds.key)
+        new_rows = new_rows.drop_duplicates(subset=key, keep="last").set_index(key)
+        current = current.drop_duplicates(subset=key, keep="last").set_index(key)
+        combined = new_rows.combine_first(current).reset_index()
+        combined = coerce(combined, ds)
     else:
         combined = new_rows
     combined = combined.sort_values(ds.date_column, ascending=False, na_position="last")

@@ -1,41 +1,41 @@
-post_id,date,channel,format,likes,comments,shares,saves,views,reach,impressions,text,source
-sample-040,2026-10-12,linkedin,single image,3,0,0,,,61,103,Sample single image post about an AI tool.,Sample data
-sample-039,2026-10-10,linkedin,video,4,3,1,,274,204,346,Sample video post about an AI tool.,Sample data
-sample-038,2026-10-10,instagram,carousel,9,0,0,1,239,151,,Sample carousel post about an AI tool.,Sample data
-sample-037,2026-10-08,linkedin,video,2,0,0,,85,69,117,Sample video post about an AI tool.,Sample data
-sample-036,2026-10-06,instagram,carousel,7,3,1,0,311,214,,"Sample carousel post about an AI tool. Comment ""GUIDE"" and we will DM you the link.",Sample data
-sample-035,2026-10-04,linkedin,carousel,4,0,1,,,82,139,Sample carousel post about an AI tool.,Sample data
-sample-034,2026-10-04,instagram,single image,8,1,3,0,402,260,,"Sample single image post about an AI tool. Comment ""GUIDE"" and we will DM you the link.",Sample data
-sample-033,2026-09-30,instagram,carousel,12,7,1,5,588,390,,"Sample carousel post about an AI tool. Comment ""REGISTER"" and we will DM you the link.",Sample data
-sample-032,2026-09-28,linkedin,carousel,2,0,0,,,57,96,Sample carousel post about an AI tool.,Sample data
-sample-031,2026-09-28,instagram,video,19,4,7,0,985,716,,"Sample video post about an AI tool. Comment ""REGISTER"" and we will DM you the link.",Sample data
-sample-030,2026-09-26,linkedin,carousel,2,1,0,,,58,98,Sample carousel post about an AI tool.,Sample data
-sample-029,2026-09-24,instagram,carousel,7,0,1,1,154,132,,"Sample carousel post about an AI tool. Comment ""AI NEWS"" and we will DM you the link.",Sample data
-sample-028,2026-09-22,linkedin,video,4,0,1,,211,186,316,Sample video post about an AI tool.,Sample data
-sample-027,2026-09-18,linkedin,video,6,1,1,,249,159,270,Sample video post about an AI tool.,Sample data
-sample-026,2026-09-16,linkedin,video,4,0,0,,122,83,141,Sample video post about an AI tool.,Sample data
-sample-025,2026-09-14,instagram,carousel,2,0,1,1,158,118,,"Sample carousel post about an AI tool. Comment ""GUIDE"" and we will DM you the link.",Sample data
-sample-024,2026-09-12,linkedin,video,5,0,0,,154,130,221,Sample video post about an AI tool.,Sample data
-sample-023,2026-09-10,instagram,carousel,11,0,4,2,423,319,,"Sample carousel post about an AI tool. Comment ""GUIDE"" and we will DM you the link.",Sample data
-sample-022,2026-09-08,linkedin,video,6,1,0,,137,112,190,Sample video post about an AI tool.,Sample data
-sample-021,2026-09-06,linkedin,single image,0,0,0,,,23,39,Sample single image post about an AI tool.,Sample data
-sample-020,2026-09-04,linkedin,video,1,0,0,,52,37,62,Sample video post about an AI tool.,Sample data
-sample-019,2026-09-04,instagram,single image,7,0,0,2,176,121,,Sample single image post about an AI tool.,Sample data
-sample-018,2026-09-02,linkedin,carousel,5,1,0,,,110,187,Sample carousel post about an AI tool.,Sample data
-sample-017,2026-08-31,instagram,carousel,2,1,1,1,125,94,,"Sample carousel post about an AI tool. Comment ""REGISTER"" and we will DM you the link.",Sample data
-sample-016,2026-08-29,instagram,carousel,15,6,2,6,522,328,,"Sample carousel post about an AI tool. Comment ""AI NEWS"" and we will DM you the link.",Sample data
-sample-015,2026-08-27,linkedin,video,9,0,1,,232,182,309,Sample video post about an AI tool.,Sample data
-sample-014,2026-08-23,linkedin,video,2,1,0,,137,97,164,Sample video post about an AI tool.,Sample data
-sample-013,2026-08-21,linkedin,carousel,3,1,0,,,95,161,Sample carousel post about an AI tool.,Sample data
-sample-012,2026-08-21,instagram,video,14,0,8,5,658,561,,"Sample video post about an AI tool. Comment ""GUIDE"" and we will DM you the link.",Sample data
-sample-011,2026-08-19,linkedin,text,2,0,0,,,59,100,Sample text post about an AI tool.,Sample data
-sample-010,2026-08-19,instagram,video,21,1,1,3,619,483,,"Sample video post about an AI tool. Comment ""AI NEWS"" and we will DM you the link.",Sample data
-sample-009,2026-08-17,linkedin,carousel,1,0,0,,,52,88,Sample carousel post about an AI tool.,Sample data
-sample-008,2026-08-17,instagram,single image,8,2,1,0,367,231,,"Sample single image post about an AI tool. Comment ""REGISTER"" and we will DM you the link.",Sample data
-sample-007,2026-08-15,instagram,carousel,6,0,2,3,288,202,,"Sample carousel post about an AI tool. Comment ""GUIDE"" and we will DM you the link.",Sample data
-sample-006,2026-08-13,linkedin,video,2,0,0,,71,60,102,Sample video post about an AI tool.,Sample data
-sample-005,2026-08-11,instagram,video,18,6,1,2,451,353,,"Sample video post about an AI tool. Comment ""AI NEWS"" and we will DM you the link.",Sample data
-sample-004,2026-08-09,linkedin,video,4,0,1,,265,173,294,Sample video post about an AI tool.,Sample data
-sample-003,2026-08-07,linkedin,text,1,1,0,,,54,91,Sample text post about an AI tool.,Sample data
-sample-002,2026-08-03,linkedin,single image,2,0,0,,,46,78,Sample single image post about an AI tool.,Sample data
-sample-001,2026-08-03,instagram,single image,2,0,0,0,68,60,,"Sample single image post about an AI tool. Comment ""REGISTER"" and we will DM you the link.",Sample data
+post_id,date,channel,format,likes,comments,shares,saves,views,reach,impressions,clicks,text,source
+sample-040,2026-10-12,linkedin,single image,3,0,0,,,61,103,6,Sample single image post about an AI tool.,Sample data
+sample-039,2026-10-10,linkedin,video,4,3,1,,274,204,346,24,Sample video post about an AI tool.,Sample data
+sample-038,2026-10-10,instagram,carousel,9,0,0,1,239,151,,,Sample carousel post about an AI tool.,Sample data
+sample-037,2026-10-08,linkedin,video,2,0,0,,85,69,117,13,Sample video post about an AI tool.,Sample data
+sample-036,2026-10-06,instagram,carousel,7,3,1,0,311,214,,,"Sample carousel post about an AI tool. Comment ""GUIDE"" and we will DM you the link.",Sample data
+sample-035,2026-10-04,linkedin,carousel,4,0,1,,,82,139,8,Sample carousel post about an AI tool.,Sample data
+sample-034,2026-10-04,instagram,single image,8,1,3,0,402,260,,,"Sample single image post about an AI tool. Comment ""GUIDE"" and we will DM you the link.",Sample data
+sample-033,2026-09-30,instagram,carousel,12,7,1,5,588,390,,,"Sample carousel post about an AI tool. Comment ""REGISTER"" and we will DM you the link.",Sample data
+sample-032,2026-09-28,linkedin,carousel,2,0,0,,,57,96,6,Sample carousel post about an AI tool.,Sample data
+sample-031,2026-09-28,instagram,video,19,4,7,0,985,716,,,"Sample video post about an AI tool. Comment ""REGISTER"" and we will DM you the link.",Sample data
+sample-030,2026-09-26,linkedin,carousel,2,1,0,,,58,98,7,Sample carousel post about an AI tool.,Sample data
+sample-029,2026-09-24,instagram,carousel,7,0,1,1,154,132,,,"Sample carousel post about an AI tool. Comment ""AI NEWS"" and we will DM you the link.",Sample data
+sample-028,2026-09-22,linkedin,video,4,0,1,,211,186,316,9,Sample video post about an AI tool.,Sample data
+sample-027,2026-09-18,linkedin,video,6,1,1,,249,159,270,17,Sample video post about an AI tool.,Sample data
+sample-026,2026-09-16,linkedin,video,4,0,0,,122,83,141,11,Sample video post about an AI tool.,Sample data
+sample-025,2026-09-14,instagram,carousel,2,0,1,1,158,118,,,"Sample carousel post about an AI tool. Comment ""GUIDE"" and we will DM you the link.",Sample data
+sample-024,2026-09-12,linkedin,video,5,0,0,,154,130,221,21,Sample video post about an AI tool.,Sample data
+sample-023,2026-09-10,instagram,carousel,11,0,4,2,423,319,,,"Sample carousel post about an AI tool. Comment ""GUIDE"" and we will DM you the link.",Sample data
+sample-022,2026-09-08,linkedin,video,6,1,0,,137,112,190,3,Sample video post about an AI tool.,Sample data
+sample-021,2026-09-06,linkedin,single image,0,0,0,,,23,39,1,Sample single image post about an AI tool.,Sample data
+sample-020,2026-09-04,linkedin,video,1,0,0,,52,37,62,1,Sample video post about an AI tool.,Sample data
+sample-019,2026-09-04,instagram,single image,7,0,0,2,176,121,,,Sample single image post about an AI tool.,Sample data
+sample-018,2026-09-02,linkedin,carousel,5,1,0,,,110,187,18,Sample carousel post about an AI tool.,Sample data
+sample-017,2026-08-31,instagram,carousel,2,1,1,1,125,94,,,"Sample carousel post about an AI tool. Comment ""REGISTER"" and we will DM you the link.",Sample data
+sample-016,2026-08-29,instagram,carousel,15,6,2,6,522,328,,,"Sample carousel post about an AI tool. Comment ""AI NEWS"" and we will DM you the link.",Sample data
+sample-015,2026-08-27,linkedin,video,9,0,1,,232,182,309,26,Sample video post about an AI tool.,Sample data
+sample-014,2026-08-23,linkedin,video,2,1,0,,137,97,164,2,Sample video post about an AI tool.,Sample data
+sample-013,2026-08-21,linkedin,carousel,3,1,0,,,95,161,19,Sample carousel post about an AI tool.,Sample data
+sample-012,2026-08-21,instagram,video,14,0,8,5,658,561,,,"Sample video post about an AI tool. Comment ""GUIDE"" and we will DM you the link.",Sample data
+sample-011,2026-08-19,linkedin,text,2,0,0,,,59,100,11,Sample text post about an AI tool.,Sample data
+sample-010,2026-08-19,instagram,video,21,1,1,3,619,483,,,"Sample video post about an AI tool. Comment ""AI NEWS"" and we will DM you the link.",Sample data
+sample-009,2026-08-17,linkedin,carousel,1,0,0,,,52,88,7,Sample carousel post about an AI tool.,Sample data
+sample-008,2026-08-17,instagram,single image,8,2,1,0,367,231,,,"Sample single image post about an AI tool. Comment ""REGISTER"" and we will DM you the link.",Sample data
+sample-007,2026-08-15,instagram,carousel,6,0,2,3,288,202,,,"Sample carousel post about an AI tool. Comment ""GUIDE"" and we will DM you the link.",Sample data
+sample-006,2026-08-13,linkedin,video,2,0,0,,71,60,102,7,Sample video post about an AI tool.,Sample data
+sample-005,2026-08-11,instagram,video,18,6,1,2,451,353,,,"Sample video post about an AI tool. Comment ""AI NEWS"" and we will DM you the link.",Sample data
+sample-004,2026-08-09,linkedin,video,4,0,1,,265,173,294,8,Sample video post about an AI tool.,Sample data
+sample-003,2026-08-07,linkedin,text,1,1,0,,,54,91,1,Sample text post about an AI tool.,Sample data
+sample-002,2026-08-03,linkedin,single image,2,0,0,,,46,78,5,Sample single image post about an AI tool.,Sample data
+sample-001,2026-08-03,instagram,single image,2,0,0,0,68,60,,,"Sample single image post about an AI tool. Comment ""REGISTER"" and we will DM you the link.",Sample data

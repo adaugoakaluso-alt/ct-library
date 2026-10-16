@@ -10,7 +10,7 @@ from datetime import date, timedelta
 import pandas as pd
 import streamlit as st
 
-from .. import config, schemas, storage
+from .. import config, importers, schemas, storage
 from ..components import Filters, show_table
 from ..connectors import REGISTRY, ConnectorError
 from ..schemas import DATE, FLOAT, INT, RATE, Dataset
@@ -62,6 +62,33 @@ def _upload(ds: Dataset, table: Table) -> None:
     if st.button("Save rows", key=f"save-up-{ds.name}", type="primary"):
         total = storage.save(ds.name, clean, "replace" if mode.startswith("Replace") else "append")
         _flash(f"Saved. {ds.title} now has {total} rows.")
+
+
+def _linkedin_export(table: Table) -> None:
+    st.subheader("Or upload a LinkedIn content export")
+    st.caption(
+        "On the AI Edge LinkedIn page, go to Analytics > Content and click Export. Upload that file here as it is. "
+        "Posts already pulled from Buffer get LinkedIn's clicks, impressions and reactions. New posts are added."
+    )
+    file = st.file_uploader("LinkedIn content export (.xls or .xlsx)", type=["xls", "xlsx"], key="up-linkedin-export")
+    if not file:
+        return
+    try:
+        export = importers.read_linkedin_content_export(file)
+    except importers.ImportProblem as exc:
+        st.error(str(exc))
+        return
+    existing = table.df if table.origin == storage.YOUR_DATA else storage.empty_frame(table.dataset)
+    merged, updated, added = importers.merge_linkedin_export(existing, export)
+    clean, problems = storage.validate(merged, table.dataset)
+    if problems:
+        st.error("Not saved:\n\n" + "\n".join(f"- {p}" for p in problems))
+        return
+    st.success(f"{len(export)} LinkedIn posts read. {updated} match posts already here and will be updated. {added} are new.")
+    show_table(export.drop(columns=["post_id"]).head(50))
+    if st.button("Save LinkedIn numbers", key="save-linkedin-export", type="primary"):
+        total = storage.save(table.dataset.name, clean, "replace")
+        _flash(f"Saved. Updated {updated} LinkedIn posts and added {added}. The posts table now has {total} rows.")
 
 
 def _form(ds: Dataset) -> None:
@@ -152,6 +179,8 @@ def render(tables: dict[str, Table], f: Filters) -> None:
     tab_upload, tab_form, tab_schema = st.tabs(["Upload a CSV", "Enter one row", "Columns and template"])
     with tab_upload:
         _upload(ds, table)
+        if name == "social_posts":
+            _linkedin_export(table)
     with tab_form:
         _form(ds)
     with tab_schema:

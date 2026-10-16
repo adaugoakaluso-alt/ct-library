@@ -7,7 +7,7 @@ It follows the AI Edge Content Conversion Question Bank and has four pages:
 | Page | What it shows |
 | --- | --- |
 | **General reporting** | KPI cards and trend lines for subscriber growth, follower count, open rate and click-through rate. Filter by date range and channel in the sidebar. |
-| **Qualitative reporting** | Best-performing CTAs ranked by clicks (CTA text, where used, channel, date, clicks), Instagram comment keywords, and a side-by-side comparison of Instagram static carousels and videos (average likes, comments, shares and saves per post). |
+| **Qualitative reporting** | Best-performing CTAs ranked by clicks (CTA text, where used, channel, date, clicks), Instagram comment keywords, LinkedIn posts ranked by clicks, and a side-by-side comparison of Instagram static carousels and videos (average likes, comments, shares and saves per post). |
 | **Data log** | Every table behind the dashboard, with the source of each row and a CSV download. |
 | **Update data** | CSV upload and one-row entry forms for every table, plus pulls from connected sources. |
 
@@ -50,12 +50,14 @@ Do this once a week, or once a month for the monthly report. Everything happens 
 | Newsletter sends | After each send | Enter delivered, total opens, unique link clicks and unsubscribes from the Iterable campaign export. |
 | Newsletter reporting periods | Weekly or monthly | Enter the Apple MPP filtered open rate and filtered click-through rate from the Iterable metrics export. |
 | Newsletter links | After each send | Upload the top links and their unique clicks from the Iterable link heatmap. |
-| Instagram and LinkedIn posts | Weekly | Click **Pull from Buffer** if Buffer is set up. Otherwise upload an export. |
+| Instagram and LinkedIn posts | Weekly | Click **Pull from Buffer** if Buffer is set up. Then upload the LinkedIn content export (LinkedIn page > Analytics > Content > Export) as it is, to add LinkedIn clicks. |
 | Followers | Weekly | Enter the Instagram and LinkedIn follower counts with the date you read them. |
 | Substack | Weekly | Enter the subscriber count, open rate and click-through rate from Substack Stats. |
 | ManyChat link clicks | Weekly | Click **Pull from ManyChat (Google Sheet)** if it is set up. Otherwise upload the clicks per keyword. |
 
-When you upload, choose **Add to my data** to keep existing rows. A new row with the same key as an existing row replaces it, which is how you correct a number. The key is listed on each table's **Columns and template** tab.
+When you upload, choose **Add to my data** to keep existing rows. A new row with the same key as an existing row updates it, which is how you correct a number. Blank cells in the new row keep the old value.
+
+**LinkedIn content export.** Buffer does not report LinkedIn clicks, but LinkedIn's own export does. On the Update data page, pick **Instagram and LinkedIn posts** and upload the export file (.xls) without changing it. Each post in the export is matched to the same post from Buffer by its opening words and date, and takes LinkedIn's clicks, impressions, likes, comments and reposts. Posts Buffer does not have are added. The export's "Posted by" names are not kept. The export has no follower count; that comes from Analytics > Followers. The key is listed on each table's **Columns and template** tab.
 
 Rates are entered as shares in CSVs, so 17.9% is `0.179`. The entry forms take percentages and convert them for you.
 
@@ -115,11 +117,12 @@ One row per Instagram or LinkedIn post. Unique by `post_id`. Source: Buffer, or 
 | post_id | text | yes | Any unique text for manual rows |
 | date | date | yes | |
 | channel | text | yes | `instagram` or `linkedin` |
-| format | text | yes | `carousel`, `video`, `single image`, `text` or `story` |
+| format | text | yes | `carousel`, `video`, `single image`, `text`, `story` or `other` |
 | likes, comments, shares | whole number | no | |
 | saves | whole number | no | Instagram only |
 | views, reach | whole number | no | |
 | impressions | whole number | no | LinkedIn only |
+| clicks | whole number | no | LinkedIn only, from the LinkedIn content export. LinkedIn counts any click on a post, not only link clicks |
 | text | text | no | Caption. Used to find comment keywords like `AI NEWS` |
 
 ### followers.csv
@@ -217,6 +220,7 @@ ai_edge_dashboard/
   metrics.py                Every calculation, with no Streamlit code
   components.py             KPI cards, charts and table helpers
   connectors/               Buffer, ManyChat (Google Sheet) and the ManyChat API placeholder
+  importers.py              Readers for platform exports, such as the LinkedIn content export
   views/                    One module per page
 sample_data/                Made-up sample CSVs, one per table
 data/                       Your real CSVs (ignored by git)

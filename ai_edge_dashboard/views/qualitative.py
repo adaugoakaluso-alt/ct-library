@@ -52,6 +52,25 @@ def render(tables: dict[str, Table], f: Filters) -> None:
                 "ManyChat clicks": st.column_config.NumberColumn(format="%d"),
             })
 
+    if f.shows("linkedin"):
+        st.subheader("LinkedIn posts by clicks")
+        st.caption(
+            "From the LinkedIn content export. LinkedIn counts any click on a post, including opening it or "
+            "seeing more text, so these are not the same measure as link clicks above."
+        )
+        li = posts[(posts["channel"] == "linkedin") & posts["clicks"].notna() & (posts["clicks"] > 0)]
+        if li.empty:
+            st.caption("No LinkedIn clicks in this date range. Upload a LinkedIn content export on the Update data page.")
+        else:
+            li_table = li.assign(
+                **{"Click-through rate": (li["clicks"] / li["impressions"] * 100).where(li["impressions"] > 0)}
+            ).sort_values(["clicks", "date"], ascending=False)
+            li_table = li_table.rename(columns={"date": "Date", "text": "Post", "clicks": "Clicks", "impressions": "Impressions", "source": "Source"})
+            show_table(li_table[["Date", "Post", "Clicks", "Impressions", "Click-through rate", "Source"]], column_config={
+                "Click-through rate": st.column_config.NumberColumn(format="%.1f%%"),
+                "Post": st.column_config.TextColumn(width="large"),
+            })
+
     # Carousels vs videos
     if not f.shows("instagram"):
         return
