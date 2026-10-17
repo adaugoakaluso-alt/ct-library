@@ -1,8 +1,8 @@
 """Calculations behind every number on the dashboard.
 
 All functions take and return pandas DataFrames or plain values, with no
-Streamlit code, so they can be tested on their own. Each KPI result keeps a
-reference to the row it came from so the page can show it.
+Streamlit code, so they can be tested on their own. Nothing here names a
+platform: channels come from the brand file and are passed in.
 """
 
 from __future__ import annotations
@@ -42,14 +42,12 @@ def _num(v) -> float | None:
     return None if v is None or pd.isna(v) else float(v)
 
 
-def latest_with_change(
-    df: pd.DataFrame,
-    date_col: str,
-    value_col: str,
-    start: date,
-    end: date,
-    label_col: str | None = None,
-) -> Kpi:
+def _src(row) -> str | None:
+    v = row.get("source") if hasattr(row, "get") else None
+    return None if v is None or pd.isna(v) else str(v)
+
+
+def latest_with_change(df: pd.DataFrame, date_col: str, value_col: str, start: date, end: date, label_col: str | None = None) -> Kpi:
     """Latest value in the date range, its change from the row before it, and
     its change across the range (first to last row in range)."""
     rows = df.dropna(subset=[value_col]).sort_values(date_col)
@@ -69,14 +67,19 @@ def latest_with_change(
         range_change=_num(last[value_col]) - _num(first_in_range[value_col]) if len(window) > 1 else None,
         as_of=last[date_col],
         row_label=str(last[label_col]) if label_col else last[date_col].strftime("%b %-d, %Y"),
-        source=None if "source" not in last or pd.isna(last["source"]) else str(last["source"]),
+        source=_src(last),
     )
 
 
-def latest_period_rate(periods: pd.DataFrame, rate_col: str, start: date, end: date) -> Kpi:
-    """Newsletter rates live on reporting periods. Use the last period that
-    overlaps the date range and compare it with the period before it."""
-    rows = periods.dropna(subset=[rate_col]).sort_values("end_date")
+def audience_kpi(audience: pd.DataFrame, channel: str, metric: str, start: date, end: date) -> Kpi:
+    rows = audience[(audience["channel"] == channel) & (audience["metric"] == metric)]
+    return latest_with_change(rows, "date", "value", start, end)
+
+
+def email_rate_kpi(email_stats: pd.DataFrame, channel: str, rate_col: str, start: date, end: date) -> Kpi:
+    """Email rates live on sends or reporting periods. Use the last one that
+    overlaps the date range and compare it with the one before it."""
+    rows = email_stats[email_stats["channel"] == channel].dropna(subset=[rate_col]).sort_values(["end_date", "start_date"])
     if rows.empty:
         return Kpi(None)
     window = overlaps(rows, "start_date", "end_date", start, end)
@@ -91,11 +94,11 @@ def latest_period_rate(periods: pd.DataFrame, rate_col: str, start: date, end: d
         previous_label=None if prev is None else str(prev["label"]),
         as_of=last["end_date"],
         row_label=str(last["label"]),
-        source=None if pd.isna(last.get("source")) else str(last["source"]),
+        source=_src(last),
     )
 
 
-# Instagram comment keywords, such as: Comment "AI NEWS" or Comment REGISTER
+# Comment keywords, such as: Comment "AI NEWS" or Comment REGISTER
 _QUOTED = re.compile(r"[Cc]omment\s*[“\"'‘]\s*([^”\"'’\n]{2,24}?)\s*[”\"'’]")
 _BARE = re.compile(r"[Cc]omment\s+([A-Z][A-Z]{2,20})\b")
 
@@ -112,100 +115,84 @@ def normalize_keyword(keyword) -> str:
     return re.sub(r"\s+", "", str(keyword)).upper()
 
 
-def keyword_table(posts: pd.DataFrame, manychat: pd.DataFrame) -> pd.DataFrame:
-    """Comment keywords used in Instagram captions, with ManyChat clicks per keyword."""
-    cols = ["Keyword", "Posts", "First used", "Last used", "ManyChat clicks"]
-    ig = posts[posts["channel"] == "instagram"].copy()
-    ig["keyword"] = ig["text"].map(extract_keyword)
-    ig = ig.dropna(subset=["keyword"])
-    if ig.empty:
+def keyword_table(posts: pd.DataFrame, cta_clicks: pd.DataFrame) -> pd.DataFrame:
+    """Comment keywords used in captions, with DM automation clicks per keyword."""
+    cols = ["Keyword", "Posts", "First used", "Last used", "Clicks"]
+    p = posts.copy()
+    p["keyword"] = p["text"].map(extract_keyword)
+    p = p.dropna(subset=["keyword"])
+    if p.empty:
         return pd.DataFrame(columns=cols)
-    ig["key"] = ig["keyword"].map(normalize_keyword)
-    grouped = ig.groupby("key").agg(
+    p["key"] = p["keyword"].map(normalize_keyword)
+    grouped = p.groupby("key").agg(
         Keyword=("keyword", lambda s: s.mode().iloc[0]),
         Posts=("post_id", "count"),
         **{"First used": ("date", "min"), "Last used": ("date", "max")},
     )
     clicks = pd.Series(dtype="Float64")
-    if not manychat.empty:
-        mc = manychat.dropna(subset=["keyword"]).copy()
-        mc["key"] = mc["keyword"].map(normalize_keyword)
-        clicks = mc.groupby("key")["clicks"].sum()
-    grouped["ManyChat clicks"] = grouped.index.map(lambda k: clicks.get(k, pd.NA))
+    kw = cta_clicks.dropna(subset=["keyword"]) if not cta_clicks.empty else cta_clicks
+    if not kw.empty:
+        kw = kw.assign(key=kw["keyword"].map(normalize_keyword))
+        clicks = kw.groupby("key")["clicks"].sum()
+    grouped["Clicks"] = grouped.index.map(lambda k: clicks.get(k, pd.NA))
     return grouped.sort_values(["Posts", "Last used"], ascending=False).reset_index(drop=True)[cols]
 
 
-def cta_ranking(links: pd.DataFrame, manychat: pd.DataFrame) -> pd.DataFrame:
-    """Every CTA with a click count, newsletter links and ManyChat keywords together,
-    ranked by clicks."""
-    frames = []
-    if not links.empty:
-        nl = links.dropna(subset=["unique_clicks"])
-        frames.append(pd.DataFrame({
-            "CTA": [
-                f'{t} ("{w}")' if isinstance(w, str) and w else t
-                for t, w in zip(nl["link_text"], nl["cta_wording"].fillna(""))
-            ],
-            "Where used": "Email, " + nl["section"].fillna("link").astype(str) + " section",
-            "Channel": "newsletter",
-            "Date": nl["send_date"],
-            "Clicks": nl["unique_clicks"],
-            "Measure": "Unique link clicks",
-            "Source": nl["source"],
-        }))
-    if not manychat.empty:
-        mc = manychat.dropna(subset=["clicks"])
-        frames.append(pd.DataFrame({
-            "CTA": [t if isinstance(t, str) and t else f'Comment "{k}"' for t, k in zip(mc["cta_text"].fillna(""), mc["keyword"])],
-            "Where used": "Instagram DM automation",
-            "Channel": "instagram",
-            "Date": mc["date"],
-            "Clicks": mc["clicks"],
-            "Measure": "ManyChat link clicks",
-            "Source": mc["source"],
-        }))
-    if not frames:
-        return pd.DataFrame(columns=["Rank", "CTA", "Where used", "Channel", "Date", "Clicks", "Measure", "Source"])
-    out = pd.concat(frames, ignore_index=True).sort_values(["Clicks", "Date"], ascending=False).reset_index(drop=True)
+def cta_ranking(cta_clicks: pd.DataFrame, channel_name) -> pd.DataFrame:
+    """Every CTA with a click count, across channels, ranked by clicks."""
+    cols = ["Rank", "CTA", "Where used", "Channel", "Date", "Clicks", "Measure", "Source"]
+    rows = cta_clicks.dropna(subset=["clicks"])
+    if rows.empty:
+        return pd.DataFrame(columns=cols)
+    out = pd.DataFrame({
+        "CTA": rows["cta"],
+        "Where used": rows["where_used"],
+        "Channel": rows["channel"].map(channel_name),
+        "Date": rows["date"],
+        "Clicks": rows["clicks"],
+        "Measure": rows["measure"],
+        "Source": rows["source"],
+    }).sort_values(["Clicks", "Date"], ascending=False).reset_index(drop=True)
     out.insert(0, "Rank", range(1, len(out) + 1))
-    return out
+    return out[cols]
 
 
-FORMAT_METRICS = {"likes": "Likes", "comments": "Comments", "shares": "Shares", "saves": "Saves"}
+ENGAGEMENT = {"likes": "Likes", "comments": "Comments", "shares": "Shares", "saves": "Saves"}
 
 
-def format_comparison(posts: pd.DataFrame) -> pd.DataFrame:
-    """Average likes, comments, shares and saves per Instagram feed post,
-    static carousels against videos. Posts with no metrics are left out."""
-    ig = posts[(posts["channel"] == "instagram") & posts["format"].isin(["carousel", "video"])]
-    ig = ig.dropna(subset=["likes"])
+def format_comparison(posts: pd.DataFrame, formats: list[str]) -> pd.DataFrame:
+    """Average likes, comments, shares and saves per post for each format.
+    Pass one channel's posts. Posts with no metrics are left out."""
+    p = posts.dropna(subset=["likes"])
     rows = []
-    for fmt, label in (("carousel", "Static carousel"), ("video", "Video (reels)")):
-        sub = ig[ig["format"] == fmt]
-        row = {"format": fmt, "Format": label, "Posts counted": len(sub)}
-        for col, name in FORMAT_METRICS.items():
+    for fmt in formats:
+        sub = p[p["format"] == fmt]
+        row = {"format": fmt, "Format": fmt.capitalize(), "Posts counted": len(sub)}
+        for col, name in ENGAGEMENT.items():
             row[f"Avg {name.lower()}"] = float(sub[col].astype("Float64").mean()) if sub[col].notna().any() else None
         rows.append(row)
     return pd.DataFrame(rows)
 
 
 def format_takeaway(table: pd.DataFrame) -> str:
-    if table.empty or (table["Posts counted"] == 0).any():
-        return "Not enough posts of both formats in this date range to compare."
-    car = table.set_index("format").loc["carousel"]
-    vid = table.set_index("format").loc["video"]
-    video_wins, carousel_wins = [], []
-    for name in FORMAT_METRICS.values():
-        c, v = car[f"Avg {name.lower()}"], vid[f"Avg {name.lower()}"]
-        if c is None or v is None or pd.isna(c) or pd.isna(v):
+    counted = table[table["Posts counted"] > 0]
+    if len(counted) < 2:
+        return "Not enough posts in two or more formats in this date range to compare."
+    lines = []
+    for name in ENGAGEMENT.values():
+        col = f"Avg {name.lower()}"
+        vals = counted.dropna(subset=[col])
+        if len(vals) < 2:
             continue
-        if v > c:
-            video_wins.append(name.lower())
-        elif c > v:
-            carousel_wins.append(name.lower())
-    parts = []
-    if video_wins:
-        parts.append("Videos average more " + ", ".join(video_wins) + ".")
-    if carousel_wins:
-        parts.append("Carousels average more " + ", ".join(carousel_wins) + ".")
-    return " ".join(parts) or "Carousels and videos average the same."
+        best = vals.sort_values(col, ascending=False).iloc[0]
+        if (vals[col] == best[col]).sum() == 1:
+            lines.append(f"{best['Format']} posts average the most {name.lower()}.")
+    return " ".join(lines) or "The formats average about the same."
+
+
+def posts_by_clicks(posts: pd.DataFrame) -> pd.DataFrame:
+    p = posts[posts["clicks"].notna() & (posts["clicks"] > 0)].copy()
+    if p.empty:
+        return p
+    p["click_rate"] = (p["clicks"] / p["impressions"] * 100).where(p["impressions"] > 0)
+    return p.sort_values(["clicks", "date"], ascending=False)

@@ -16,7 +16,7 @@ import pandas as pd
 
 LINKEDIN_SHEET = "All posts"
 
-# LinkedIn column -> social_posts column
+# LinkedIn column -> posts column
 LINKEDIN_COLUMNS = {
     "Impressions": "impressions",
     "Views": "views",
@@ -38,8 +38,8 @@ def _match_key(text) -> str:
     return re.sub(r"[^a-z0-9]", "", str(text or "").lower())[:40]
 
 
-def read_linkedin_content_export(file) -> pd.DataFrame:
-    """Read the "All posts" sheet of a LinkedIn content export into social_posts rows."""
+def read_linkedin_content_export(file, channel: str = "linkedin") -> pd.DataFrame:
+    """Read the "All posts" sheet of a LinkedIn content export into posts rows for one channel."""
     try:
         sheets = pd.read_excel(file, sheet_name=None, header=None, dtype=str)
     except Exception as exc:  # not an Excel file, or a damaged one
@@ -66,7 +66,7 @@ def read_linkedin_content_export(file) -> pd.DataFrame:
     out = pd.DataFrame({
         "post_id": "li-" + df["Post link"].astype(str).str.extract(r"(\d{10,})", expand=False).fillna(df["Post link"].astype(str)),
         "date": pd.to_datetime(df["Created date"], format="%m/%d/%Y", errors="coerce").dt.strftime("%Y-%m-%d"),
-        "channel": "linkedin",
+        "channel": channel,
         "format": df.get("Content Type", pd.Series("", index=df.index)).fillna("").str.strip().str.lower()
         .map(lambda t: "video" if t == "video" else "other"),
         "text": df["Post title"],
@@ -77,7 +77,7 @@ def read_linkedin_content_export(file) -> pd.DataFrame:
     return out.reset_index(drop=True)
 
 
-def merge_linkedin_export(existing: pd.DataFrame, export: pd.DataFrame) -> tuple[pd.DataFrame, int, int]:
+def merge_linkedin_export(existing: pd.DataFrame, export: pd.DataFrame, channel: str = "linkedin") -> tuple[pd.DataFrame, int, int]:
     """Fold LinkedIn export rows into the existing posts table.
 
     A post already in the table (same text start, created within a day) keeps
@@ -88,7 +88,7 @@ def merge_linkedin_export(existing: pd.DataFrame, export: pd.DataFrame) -> tuple
     merged = existing.copy()
     if "clicks" not in merged.columns:
         merged["clicks"] = pd.NA
-    li = merged[merged["channel"] == "linkedin"]
+    li = merged[merged["channel"] == channel]
     keys = li["text"].map(_match_key)
     dates = pd.to_datetime(li["date"])
     updated, new_rows = 0, []

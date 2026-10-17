@@ -2,7 +2,7 @@ import io
 
 import pandas as pd
 
-from content_dashboard import config, importers, schemas, storage
+from content_dashboard import importers, schemas, storage
 
 
 def linkedin_export(rows) -> io.BytesIO:
@@ -26,7 +26,7 @@ ROWS = [
 ]
 
 
-def test_read_linkedin_export_maps_columns_and_drops_names():
+def test_read_linkedin_export_maps_columns_and_drops_names(example):
     df = importers.read_linkedin_content_export(linkedin_export(ROWS))
     assert len(df) == 2
     assert "Posted by" not in df.columns
@@ -35,7 +35,7 @@ def test_read_linkedin_export_maps_columns_and_drops_names():
     assert first["date"] == "2026-09-23"
     assert first["clicks"] == 42 and first["shares"] == 1
     assert df.iloc[1]["format"] == "video" and first["format"] == "other"
-    _, problems = storage.validate(df, schemas.get("social_posts"))
+    _, problems = storage.validate(df, schemas.get("posts"), example)
     assert problems == []
 
 
@@ -57,7 +57,7 @@ def test_merge_updates_buffer_posts_and_adds_new_ones():
         {"post_id": "buf-1", "date": "2026-09-24", "channel": "linkedin", "format": "single image",
          "likes": "1", "impressions": "29", "text": "Anthropic just released Claude Opus 5.5. It is designed to be...", "source": "Buffer"},
         {"post_id": "buf-2", "date": "2026-09-24", "channel": "instagram", "format": "carousel", "likes": "5", "text": "Anthropic just released", "source": "Buffer"},
-    ]), schemas.get("social_posts"))
+    ]), schemas.get("posts"))
     export = importers.read_linkedin_content_export(linkedin_export(ROWS))
     merged, updated, added = importers.merge_linkedin_export(existing, export)
     assert (updated, added) == (1, 1)
@@ -67,17 +67,16 @@ def test_merge_updates_buffer_posts_and_adds_new_ones():
     assert merged.set_index("post_id").loc["buf-2", "likes"] == 5
 
 
-def test_append_keeps_values_a_new_row_leaves_blank(tmp_path, monkeypatch):
-    monkeypatch.setattr(config, "DATA_DIR", tmp_path)
-    ds = schemas.get("social_posts")
+def test_append_keeps_values_a_new_row_leaves_blank(data_dir, example):
+    ds = schemas.get("posts")
     first, _ = storage.validate(pd.DataFrame([{"post_id": "p1", "date": "2026-10-01", "channel": "linkedin", "format": "text",
-                                               "likes": "1", "clicks": "9", "source": "LinkedIn export"}]), ds)
-    storage.save("social_posts", first)
+                                               "likes": "1", "clicks": "9", "source": "LinkedIn export"}]), ds, example)
+    storage.save("posts", first, example)
     # A later Buffer pull has fresh likes but no clicks.
     later, _ = storage.validate(pd.DataFrame([{"post_id": "p1", "date": "2026-10-01", "channel": "linkedin", "format": "text",
-                                               "likes": "3", "source": "Buffer"}]), ds)
-    storage.save("social_posts", later)
-    row = storage.load("social_posts").df.set_index("post_id").loc["p1"]
+                                               "likes": "3", "source": "Buffer"}]), ds, example)
+    storage.save("posts", later, example)
+    row = storage.load("posts", example).df.set_index("post_id").loc["p1"]
     assert row["likes"] == 3 and row["clicks"] == 9
 
 
@@ -85,7 +84,7 @@ def test_merge_matches_a_shortened_copy_of_the_post_text():
     existing = storage.coerce(pd.DataFrame([
         {"post_id": "buf-9", "date": "2026-10-06", "channel": "linkedin", "format": "video",
          "text": "One tool worth testing : Napkin AI. You paste your notes, highlight the section you want", "source": "Buffer"},
-    ]), schemas.get("social_posts"))
+    ]), schemas.get("posts"))
     pasted = pd.DataFrame([{"post_id": "li-x", "date": "2026-10-06", "channel": "linkedin", "format": "video",
                             "text": "One tool worth testing : Napkin AI.", "source": "LinkedIn", "impressions": 29,
                             "views": 5, "clicks": 0, "likes": 0, "comments": 0, "shares": 0}])

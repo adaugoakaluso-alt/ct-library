@@ -1,4 +1,6 @@
-"""Paths, channel names and settings.
+"""Paths and settings.
+
+Brands and their channels are not set here; they live in brands/<brand-id>.toml.
 
 Everything resolves relative to the repo root, so the app runs the same on a
 laptop, in CI and on Streamlit Community Cloud. Credentials only ever come
@@ -24,41 +26,30 @@ def _repo_path(value: str) -> Path:
     return path if path.is_absolute() else REPO_ROOT / path
 
 
-# Real data you enter or upload. Ignored by git.
-DATA_DIR = _repo_path(os.getenv("AI_EDGE_DATA_DIR", "data"))
+# Real data you enter or upload, one folder per brand. Ignored by git.
+DATA_DIR = _repo_path(os.getenv("DATA_DIR") or "data")
 
-# Fake sample data, committed so a fresh clone runs straight away.
+# Made-up data for the example brand, committed so a fresh clone runs straight away.
 SAMPLE_DIR = REPO_ROOT / "sample_data"
 
-# Channel ids used in every CSV, and the names shown in the app.
-CHANNELS = {
-    "newsletter": "Newsletter",
-    "instagram": "Instagram",
-    "linkedin": "LinkedIn",
-    "substack": "Substack",
-}
 
-# One color per channel, used by every chart.
-CHANNEL_COLORS = {
-    "newsletter": "#2F6FDB",
-    "instagram": "#C2417A",
-    "linkedin": "#0F8B8D",
-    "substack": "#D9822B",
-}
-
-FORMAT_COLORS = {
-    "carousel": "#2F6FDB",
-    "video": "#C2417A",
-}
+def brand_prefix(brand_id: str) -> str:
+    """Prefix for a brand's own settings: travel-noire -> TRAVEL_NOIRE_."""
+    return brand_id.upper().replace("-", "_") + "_"
 
 
-def env(name: str, default: str | None = None) -> str | None:
-    """Read a setting from the environment. Empty strings count as unset."""
-    value = os.getenv(name, default)
-    if value is None or str(value).strip() == "":
-        return default
-    return str(value).strip()
+def env(name: str, default: str | None = None, brand: str | None = None) -> str | None:
+    """Read a setting from the environment. Empty strings count as unset.
+
+    With a brand id, a brand's own setting wins: TRAVEL_NOIRE_BUFFER_API_KEY is
+    read before BUFFER_API_KEY. That lets one copy of the app hold several
+    brands that each pull from their own accounts.
+    """
+    names = ([brand_prefix(brand) + name] if brand else []) + [name]
+    for n in names:
+        value = os.getenv(n)
+        if value is not None and str(value).strip() != "":
+            return str(value).strip()
+    return default
 
 
-# Shown in the browser tab and the sidebar. Each team sets its own in .env.
-APP_TITLE = env("APP_TITLE", "Content reporting")

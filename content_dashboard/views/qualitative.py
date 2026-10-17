@@ -1,91 +1,85 @@
-"""Page 2: Qualitative reporting. Best-performing CTAs ranked, and Instagram
-static carousels against videos."""
+"""Page 2: Qualitative reporting. Best-performing CTAs ranked, comment keywords,
+posts by clicks, and engagement by post format for any social channel."""
 
 from __future__ import annotations
 
 import plotly.graph_objects as go
 import streamlit as st
 
-from .. import config, metrics
-from ..components import Filters, origin_note, show_table
+from .. import metrics
+from ..components import FORMAT_COLORS, Filters, origin_note, show_table
 from ..storage import Table
 
 
 def render(tables: dict[str, Table], f: Filters) -> None:
-    links = metrics.in_range(tables["newsletter_links"].df, "send_date", f.start, f.end)
-    manychat = metrics.in_range(tables["manychat_clicks"].df, "date", f.start, f.end)
-    posts = metrics.in_range(tables["social_posts"].df, "date", f.start, f.end)
+    brand = f.brand
+    cta = metrics.in_range(tables["cta_clicks"].df, "date", f.start, f.end)
+    cta = cta[cta["channel"].isin(f.channels)]
+    posts = metrics.in_range(tables["posts"].df, "date", f.start, f.end)
+    posts = posts[posts["channel"].isin(f.channels)]
 
     st.title("Qualitative reporting")
     st.caption(f"{f.start:%b %-d, %Y} to {f.end:%b %-d, %Y}.")
-    origin_note(tables["newsletter_links"], tables["manychat_clicks"], tables["social_posts"])
+    origin_note(tables["cta_clicks"], tables["posts"])
 
     # Best-performing CTAs
     st.header("Best-performing CTAs")
-    st.caption(
-        "Ranked by clicks. Newsletter clicks are unique link clicks from Iterable. "
-        "Instagram clicks come from ManyChat, the source of truth for Instagram click-through."
-    )
-    ranking = metrics.cta_ranking(
-        links if f.shows("newsletter") else links.iloc[0:0],
-        manychat if f.shows("instagram") else manychat.iloc[0:0],
-    )
+    st.caption("Ranked by clicks. The Measure column says what each count is, such as unique link clicks or DM link clicks.")
+    ranking = metrics.cta_ranking(cta, brand.channel_name)
     if ranking.empty:
         st.caption("No CTAs with clicks in this date range and channel selection.")
     else:
-        ranking["Channel"] = ranking["Channel"].map(config.CHANNELS)
-        show_table(ranking, column_config={
-            "Date": st.column_config.DateColumn(format="MMM D, YYYY"),
-            "Clicks": st.column_config.NumberColumn(format="%d"),
+        show_table(ranking, column_config={"Clicks": st.column_config.NumberColumn(format="%d")})
+
+    social = [c for c in f.visible(brand.social) if (posts["channel"] == c.id).any()]
+
+    # Comment keywords
+    with_keywords = [c for c in social if posts[posts["channel"] == c.id]["text"].map(metrics.extract_keyword).notna().any()]
+    if with_keywords:
+        st.subheader("Comment keywords")
+        st.caption('Keywords found in captions, such as Comment "AI NEWS", with DM automation clicks for each keyword once they are logged.')
+        ch = st.selectbox("Channel", with_keywords, format_func=lambda c: c.name, key="kw-channel") if len(with_keywords) > 1 else with_keywords[0]
+        kw = metrics.keyword_table(posts[posts["channel"] == ch.id], cta[cta["channel"] == ch.id])
+        show_table(kw, column_config={"Clicks": st.column_config.NumberColumn(format="%d")})
+
+    # Posts by clicks
+    clicked = metrics.posts_by_clicks(posts)
+    if not clicked.empty:
+        st.subheader("Posts by clicks")
+        st.caption("Clicks as each platform counts them. LinkedIn, for example, counts any click on a post, including "
+                   "opening it, so these are not the same measure as link clicks.")
+        table = clicked.assign(Channel=clicked["channel"].map(brand.channel_name)).rename(columns={
+            "date": "Date", "text": "Post", "clicks": "Clicks", "impressions": "Impressions",
+            "click_rate": "Click-through rate", "source": "Source"})
+        show_table(table[["Date", "Channel", "Post", "Clicks", "Impressions", "Click-through rate", "Source"]], column_config={
+            "Click-through rate": st.column_config.NumberColumn(format="%.1f%%"),
+            "Post": st.column_config.TextColumn(width="large"),
         })
 
-    if f.shows("instagram"):
-        st.subheader("Instagram comment keywords")
-        st.caption("Keywords found in Instagram captions, such as Comment \"AI NEWS\", with ManyChat clicks for each keyword once they are logged.")
-        kw = metrics.keyword_table(posts, manychat)
-        if kw.empty:
-            st.caption("No comment keywords found in Instagram captions in this date range.")
-        else:
-            show_table(kw, column_config={
-                "First used": st.column_config.DateColumn(format="MMM D, YYYY"),
-                "Last used": st.column_config.DateColumn(format="MMM D, YYYY"),
-                "ManyChat clicks": st.column_config.NumberColumn(format="%d"),
-            })
-
-    if f.shows("linkedin"):
-        st.subheader("LinkedIn posts by clicks")
-        st.caption(
-            "From the LinkedIn content export. LinkedIn counts any click on a post, including opening it or "
-            "seeing more text, so these are not the same measure as link clicks above."
-        )
-        li = posts[(posts["channel"] == "linkedin") & posts["clicks"].notna() & (posts["clicks"] > 0)]
-        if li.empty:
-            st.caption("No LinkedIn clicks in this date range. Upload a LinkedIn content export on the Update data page.")
-        else:
-            li_table = li.assign(
-                **{"Click-through rate": (li["clicks"] / li["impressions"] * 100).where(li["impressions"] > 0)}
-            ).sort_values(["clicks", "date"], ascending=False)
-            li_table = li_table.rename(columns={"date": "Date", "text": "Post", "clicks": "Clicks", "impressions": "Impressions", "source": "Source"})
-            show_table(li_table[["Date", "Post", "Clicks", "Impressions", "Click-through rate", "Source"]], column_config={
-                "Click-through rate": st.column_config.NumberColumn(format="%.1f%%"),
-                "Post": st.column_config.TextColumn(width="large"),
-            })
-
-    # Carousels vs videos
-    if not f.shows("instagram"):
+    # Engagement by format
+    if not social:
         return
-    st.header("Instagram: static carousels vs videos")
-    table = metrics.format_comparison(posts)
+    st.header("Engagement by post format")
+    c1, c2 = st.columns([1, 2])
+    ch = c1.selectbox("Channel", social, format_func=lambda c: c.name, key="fmt-channel")
+    ch_posts = posts[(posts["channel"] == ch.id) & (posts["format"] != "story")]
+    present = [x for x in ch_posts.dropna(subset=["likes"])["format"].value_counts().index]
+    default = [x for x in ("carousel", "video") if x in present] or present[:2]
+    formats = c2.multiselect("Formats to compare", present, default=default, key="fmt-formats")
+    if not formats:
+        st.caption("Pick at least one format.")
+        return
+    table = metrics.format_comparison(ch_posts, formats)
     st.write(metrics.format_takeaway(table))
     fig = go.Figure()
-    names = list(metrics.FORMAT_METRICS.values())
-    for _, row in table.iterrows():
+    names = list(metrics.ENGAGEMENT.values())
+    for i, (_, row) in enumerate(table.iterrows()):
         if row["Posts counted"] == 0:
             continue
         values = [row[f"Avg {n.lower()}"] for n in names]
         fig.add_trace(go.Bar(
             x=names, y=values, name=f"{row['Format']} ({row['Posts counted']} posts)",
-            marker_color=config.FORMAT_COLORS[row["format"]],
+            marker_color=FORMAT_COLORS[i % len(FORMAT_COLORS)],
             text=[None if v is None else f"{v:.1f}" for v in values], textposition="outside",
             hovertemplate="%{x}: %{y:.1f} per post<extra>" + row["Format"] + "</extra>",
         ))
@@ -96,15 +90,12 @@ def render(tables: dict[str, Table], f: Filters) -> None:
             yaxis=dict(title="Average per post", rangemode="tozero"),
         )
         st.plotly_chart(fig, width="stretch", config={"displayModeBar": False})
-    else:
-        st.caption("No Instagram carousels or videos with metrics in this date range.")
     show_table(table.drop(columns=["format"]), column_config={
         c: st.column_config.NumberColumn(format="%.1f") for c in table.columns if c.startswith("Avg")
     })
-    st.caption(
-        "Feed posts only. Stories and single-image posts are left out. Averages can be moved a lot by one post "
-        "that travels far, so check the post list below."
-    )
+    st.caption("Stories and posts with no metrics are left out. Averages can be moved a lot by one post that travels far, "
+               "so check the posts below.")
     with st.expander("Posts behind this comparison"):
-        ig = posts[(posts["channel"] == "instagram") & posts["format"].isin(["carousel", "video"])]
-        show_table(ig[["date", "format", "likes", "comments", "shares", "saves", "views", "reach", "text", "source"]].sort_values("date", ascending=False))
+        show_table(ch_posts[ch_posts["format"].isin(formats)][
+            ["date", "format", "likes", "comments", "shares", "saves", "views", "reach", "text", "source"]
+        ].sort_values("date", ascending=False))

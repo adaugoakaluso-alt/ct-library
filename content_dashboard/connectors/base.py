@@ -1,8 +1,9 @@
 """The shape every data connector follows.
 
 A connector fetches rows for exactly one table (a schema in schemas.py) and
-returns them as a DataFrame with that table's columns, including a `source`
-column that says where each row came from. The Update data page lists every
+returns them as a DataFrame with that table's columns, including a `channel`
+column holding one of the brand's channel ids and a `source` column that says
+where each row came from. The Update data page lists every
 registered connector, shows whether its settings are present, and saves what
 fetch() returns through storage.save(), the same path CSV uploads take.
 
@@ -18,6 +19,7 @@ from datetime import date
 import pandas as pd
 
 from .. import config
+from ..brands import Brand
 
 
 class ConnectorError(Exception):
@@ -36,12 +38,13 @@ class Connector(ABC):
     # False for a connector that is documented but not built yet.
     implemented: bool = True
 
-    def missing_settings(self) -> list[str]:
-        return [v for v in self.required_env if not config.env(v)]
+    def missing_settings(self, brand: Brand) -> list[str]:
+        """Settings not found under either name, such as AI_EDGE_BUFFER_API_KEY or BUFFER_API_KEY."""
+        return [v for v in self.required_env if not config.env(v, brand=brand.id)]
 
-    def is_configured(self) -> bool:
-        return self.implemented and not self.missing_settings()
+    def is_configured(self, brand: Brand) -> bool:
+        return self.implemented and not self.missing_settings(brand)
 
     @abstractmethod
-    def fetch(self, start: date, end: date) -> pd.DataFrame:
-        """Return rows dated between start and end, in the dataset's columns."""
+    def fetch(self, start: date, end: date, brand: Brand) -> pd.DataFrame:
+        """Return the brand's rows dated between start and end, in the dataset's columns."""

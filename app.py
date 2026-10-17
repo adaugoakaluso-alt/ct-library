@@ -10,13 +10,24 @@ from datetime import date
 import pandas as pd
 import streamlit as st
 
-from content_dashboard import config, storage
+from content_dashboard import brands, storage
 from content_dashboard.components import Filters
 from content_dashboard.views import data_log, general, qualitative, update_data
 
-st.set_page_config(page_title=config.APP_TITLE, layout="wide")
+try:
+    all_brands = brands.list_brands()
+except brands.BrandError as exc:
+    st.set_page_config(page_title="Content reporting", layout="wide")
+    st.error(f"A brand file needs fixing: {exc}")
+    st.stop()
 
-tables = storage.load_all()
+ids = list(all_brands)
+default = brands.default_brand_id(all_brands)
+brand_id = st.session_state.get("brand", default)
+brand = all_brands.get(brand_id, all_brands[default])
+
+st.set_page_config(page_title=brand.title, layout="wide")
+tables = storage.load_all(brand)
 
 
 def _earliest_date() -> date:
@@ -29,20 +40,23 @@ def _earliest_date() -> date:
 
 
 with st.sidebar:
-    st.markdown(f"### {config.APP_TITLE}")
-    picked = st.date_input("Date range", value=(_earliest_date(), date.today()), format="YYYY-MM-DD")
+    if len(ids) > 1:
+        st.selectbox("Brand", ids, index=ids.index(brand.id), format_func=lambda b: all_brands[b].name, key="brand")
+    st.markdown(f"### {brand.title}")
+    picked = st.date_input("Date range", value=(_earliest_date(), date.today()), format="YYYY-MM-DD", key=f"range-{brand.id}")
     # While someone is mid-way through picking a range, only the start date is set.
     if isinstance(picked, (tuple, list)):
         start, end = (picked[0], picked[-1]) if picked else (_earliest_date(), date.today())
     else:
         start = end = picked
     channels = st.multiselect(
-        "Channels", list(config.CHANNELS), default=list(config.CHANNELS), format_func=config.CHANNELS.get
+        "Channels", brand.channel_ids, default=brand.channel_ids,
+        format_func=brand.channel_name, key=f"channels-{brand.id}",
     )
     if any(t.is_sample for t in tables.values()):
-        st.caption("Some tables are showing sample data. See the Data log.")
+        st.caption("This brand is showing sample data. See the Data log.")
 
-filters = Filters(start=pd.Timestamp(start).date(), end=pd.Timestamp(end).date(), channels=channels)
+filters = Filters(brand=brand, start=pd.Timestamp(start).date(), end=pd.Timestamp(end).date(), channels=channels)
 
 
 def general_page():

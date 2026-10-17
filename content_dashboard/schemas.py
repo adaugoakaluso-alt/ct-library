@@ -1,8 +1,10 @@
-"""One CSV schema per table.
+"""The four CSV tables every brand uses.
 
-These definitions drive everything else: loading and type conversion, upload
-validation, the manual entry forms, the CSV templates and the README tables.
-Change a schema here and every page follows.
+Every table has a `channel` column holding a channel id from the brand's file
+in brands/. That is what lets one set of tables cover any mix of platforms.
+
+These definitions drive loading, upload checks, the entry forms, the CSV
+templates and the README tables. Change a schema here and every page follows.
 
 Rates (open rate, click-through rate) are stored as shares: 0.179 means 17.9%.
 Dates are YYYY-MM-DD.
@@ -12,12 +14,15 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-# Column kinds
 TEXT = "text"
 DATE = "date"
 INT = "int"
 FLOAT = "float"
-RATE = "rate"  # a share between 0 and 1
+RATE = "rate"        # a share between 0 and 1
+CHANNEL = "channel"  # a channel id from the brand's file
+
+FORMATS = ("carousel", "video", "single image", "text", "story", "other")
+AUDIENCE_METRICS = ("followers", "subscribers")
 
 
 @dataclass(frozen=True)
@@ -33,148 +38,109 @@ class Column:
 class Dataset:
     name: str
     title: str
-    channels: tuple[str, ...]
     description: str
     where_to_get_it: str
     key: tuple[str, ...]
+    date_column: str
+    kinds: tuple[str, ...]  # which kinds of channel use this table: social, email, other
     columns: tuple[Column, ...] = field(default_factory=tuple)
 
     @property
     def column_names(self) -> list[str]:
         return [c.name for c in self.columns]
 
-    @property
-    def date_column(self) -> str:
-        return next(c.name for c in self.columns if c.kind == DATE)
-
     def column(self, name: str) -> Column:
         return next(c for c in self.columns if c.name == name)
 
 
 SOURCE = Column("source", TEXT, required=False, help="Where this row came from, such as 'Iterable export' or 'Manual entry'.")
+CHANNEL_COL = Column("channel", CHANNEL, help="Channel id from your brand file, such as instagram or newsletter.")
 
 DATASETS: dict[str, Dataset] = {
-    "newsletter_sends": Dataset(
-        name="newsletter_sends",
-        title="Newsletter sends",
-        channels=("newsletter",),
-        description="One row per newsletter send.",
-        where_to_get_it="Iterable campaign metrics export for each send.",
-        key=("send_date",),
+    "audience": Dataset(
+        name="audience",
+        title="Audience",
+        description="Followers or subscribers per channel on the date you read the count.",
+        where_to_get_it="Each platform's analytics page (followers), or your email platform or Substack (subscribers).",
+        key=("channel", "metric", "date"),
+        date_column="date",
+        kinds=("social", "email", "other"),
         columns=(
-            Column("send_date", DATE, help="Date the newsletter went out."),
-            Column("day_time_et", TEXT, required=False, help="Send day and time, Eastern. Example: Mon 12pm."),
-            Column("delivered", INT, help="Emails delivered. Used as the newsletter subscriber count."),
-            Column("total_opens", INT, required=False, help="Total opens, raw (not MPP filtered)."),
-            Column("unique_link_clicks", INT, required=False, help="Unique link clicks, summed across links."),
-            Column("unsubscribes", INT, required=False, help="Unsubscribes from this send."),
+            Column("date", DATE, help="Date you read the count."),
+            CHANNEL_COL,
+            Column("metric", TEXT, help="followers for social channels, subscribers for email and other channels.", choices=AUDIENCE_METRICS),
+            Column("value", INT, help="The count."),
             SOURCE,
         ),
     ),
-    "newsletter_periods": Dataset(
-        name="newsletter_periods",
-        title="Newsletter reporting periods",
-        channels=("newsletter",),
-        description="Filtered open rate and click-through rate per reporting period (a week, a month, or a single send).",
-        where_to_get_it="Iterable metrics export for the period. Use the Apple MPP filtered open rate and filtered unique clicks.",
-        key=("period_id",),
+    "email_stats": Dataset(
+        name="email_stats",
+        title="Email stats",
+        description="Open rate and click-through rate for an email channel, per send or per reporting period.",
+        where_to_get_it="Your email platform's campaign or period export (for example Iterable or Substack Stats).",
+        key=("channel", "period_id"),
+        date_column="end_date",
+        kinds=("email",),
         columns=(
-            Column("period_id", TEXT, help="Short unique id. Example: 2026-09 or send-2026-10-05."),
-            Column("label", TEXT, help="Name shown in the app. Example: September (4 sends)."),
-            Column("start_date", DATE, help="First day of the period."),
-            Column("end_date", DATE, help="Last day of the period."),
-            Column("sends", INT, required=False, help="Number of sends in the period."),
-            Column("delivered", INT, required=False, help="Emails delivered across the period."),
-            Column("open_rate_filtered", RATE, help="Unique opens with Apple MPP filtered out, divided by delivered."),
-            Column("click_rate_filtered", RATE, help="Filtered unique clicks divided by delivered."),
-            Column("click_to_open_filtered", RATE, required=False, help="Filtered clicks divided by filtered opens."),
-            Column("unsubscribe_rate", RATE, required=False, help="Unsubscribes divided by delivered."),
+            CHANNEL_COL,
+            Column("period_id", TEXT, help="Short id, unique within the channel. Example: 2026-09 or send-2026-10-05."),
+            Column("label", TEXT, help="Name shown in the app. Example: September (4 sends) or 10/5 send."),
+            Column("start_date", DATE, help="First day of the period. For one send, the send date."),
+            Column("end_date", DATE, help="Last day of the period. For one send, the send date."),
+            Column("sends", INT, required=False),
+            Column("delivered", INT, required=False),
+            Column("total_opens", INT, required=False, help="Raw total opens."),
+            Column("link_clicks", INT, required=False, help="Link clicks in the period."),
+            Column("open_rate", RATE, required=False, help="Opens divided by delivered. Use the privacy-filtered rate if your platform has one."),
+            Column("click_rate", RATE, required=False, help="Unique clicks divided by delivered."),
+            Column("click_to_open", RATE, required=False),
+            Column("unsubscribe_rate", RATE, required=False),
             SOURCE,
         ),
     ),
-    "newsletter_links": Dataset(
-        name="newsletter_links",
-        title="Newsletter links",
-        channels=("newsletter",),
-        description="Link clicks per send. Feeds the CTA ranking.",
-        where_to_get_it="Iterable link heatmap for each send.",
-        key=("link_id",),
-        columns=(
-            Column("link_id", TEXT, help="Short unique id. Example: nl-1005-gemini."),
-            Column("send_date", DATE, help="Date of the send the link was in."),
-            Column("link_text", TEXT, help="The linked text or a short name for the link."),
-            Column("cta_wording", TEXT, required=False, help="CTA wording around the link, if any."),
-            Column("section", TEXT, required=False, help="Newsletter section. Example: Story, Events, Go Deeper."),
-            Column("unique_clicks", INT, help="Unique clicks on this link."),
-            SOURCE,
-        ),
-    ),
-    "social_posts": Dataset(
-        name="social_posts",
-        title="Instagram and LinkedIn posts",
-        channels=("instagram", "linkedin"),
-        description="One row per Instagram or LinkedIn post with its engagement.",
-        where_to_get_it="Pulled from Buffer when BUFFER_API_KEY is set. LinkedIn clicks come from the LinkedIn content export (Analytics > Content > Export), uploaded on the Update data page.",
+    "posts": Dataset(
+        name="posts",
+        title="Posts",
+        description="One row per post on a social channel, with its engagement.",
+        where_to_get_it="Pulled from Buffer when it is set up, or exported from each platform's analytics.",
         key=("post_id",),
+        date_column="date",
+        kinds=("social",),
         columns=(
             Column("post_id", TEXT, help="Unique post id. Any unique text works for manual rows."),
             Column("date", DATE, help="Date the post went live."),
-            Column("channel", TEXT, choices=("instagram", "linkedin")),
-            Column("format", TEXT, help="Post format.", choices=("carousel", "video", "single image", "text", "story", "other")),
+            CHANNEL_COL,
+            Column("format", TEXT, help="Post format.", choices=FORMATS),
             Column("likes", INT, required=False),
             Column("comments", INT, required=False),
             Column("shares", INT, required=False),
-            Column("saves", INT, required=False, help="Instagram only."),
+            Column("saves", INT, required=False),
             Column("views", INT, required=False),
             Column("reach", INT, required=False),
-            Column("impressions", INT, required=False, help="LinkedIn only."),
-            Column("clicks", INT, required=False, help="LinkedIn only, from the LinkedIn content export. Counts any click on the post, not only link clicks."),
+            Column("impressions", INT, required=False),
+            Column("clicks", INT, required=False, help="Clicks on the post as the platform counts them."),
             Column("text", TEXT, required=False, help="Caption or post text. Used to find comment keywords like AI NEWS."),
             SOURCE,
         ),
     ),
-    "followers": Dataset(
-        name="followers",
-        title="Followers",
-        channels=("instagram", "linkedin"),
-        description="Follower count per channel on the date you read it.",
-        where_to_get_it="Instagram professional dashboard and LinkedIn page analytics.",
-        key=("channel", "date"),
+    "cta_clicks": Dataset(
+        name="cta_clicks",
+        title="CTA clicks",
+        description="Clicks on a call to action: a newsletter link, a DM automation keyword, a link in bio, and so on.",
+        where_to_get_it="Email link reports (such as an Iterable link heatmap), ManyChat, or a link tool like Linktree.",
+        key=("cta_id",),
+        date_column="date",
+        kinds=("social", "email", "other"),
         columns=(
-            Column("date", DATE, help="Date you read the count."),
-            Column("channel", TEXT, choices=("instagram", "linkedin")),
-            Column("followers", INT),
-            SOURCE,
-        ),
-    ),
-    "substack": Dataset(
-        name="substack",
-        title="Substack",
-        channels=("substack",),
-        description="Substack subscriber count, open rate and click-through rate on the date you read them.",
-        where_to_get_it="Substack dashboard, Stats page.",
-        key=("date",),
-        columns=(
-            Column("date", DATE, help="Date you read the numbers."),
-            Column("subscribers", INT, required=False, help="Total subscribers on this date. Leave blank on rows that only record a post's open rate."),
-            Column("open_rate", RATE, required=False, help="Open rate as a share. 0.42 means 42%. Use the post's Opened figure for a per-post row."),
-            Column("click_rate", RATE, required=False, help="Click-through rate as a share. 0.031 means 3.1%."),
-            SOURCE,
-        ),
-    ),
-    "manychat_clicks": Dataset(
-        name="manychat_clicks",
-        title="ManyChat link clicks",
-        channels=("instagram",),
-        description="Link clicks from Instagram DM automations. ManyChat is the source of truth for Instagram click-through.",
-        where_to_get_it="ManyChat automation stats, or the Google Sheet your ManyChat flows log clicks to.",
-        key=("date", "keyword"),
-        columns=(
-            Column("date", DATE, help="Day, or last day of the period, the clicks were counted for."),
-            Column("keyword", TEXT, help="Comment keyword that triggers the flow. Example: AI NEWS."),
-            Column("cta_text", TEXT, required=False, help="CTA as written in the post. Example: Comment AI NEWS for the newsletter link."),
-            Column("link", TEXT, required=False, help="Where the link goes."),
-            Column("clicks", INT, help="Link clicks."),
+            Column("cta_id", TEXT, help="Short unique id. Example: nl-1005-gemini."),
+            Column("date", DATE, help="Send date, post date, or the last day the clicks were counted for."),
+            CHANNEL_COL,
+            Column("cta", TEXT, help="The CTA as people saw it."),
+            Column("where_used", TEXT, required=False, help="Where it appeared. Example: Email, Story section."),
+            Column("clicks", INT, help="Clicks or conversions."),
+            Column("measure", TEXT, required=False, help="What the clicks count. Example: Unique link clicks, DM link clicks."),
+            Column("keyword", TEXT, required=False, help="Comment keyword that triggers a DM automation, if any. Example: AI NEWS."),
+            Column("link", TEXT, required=False),
             SOURCE,
         ),
     ),

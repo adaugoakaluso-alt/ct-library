@@ -1,10 +1,9 @@
-"""Load, validate and save the CSV tables.
+"""Load, check and save each brand's CSV tables.
 
-Each table lives in one CSV file named after its schema, such as
-data/followers.csv. While the data folder is empty (a fresh clone), every table
-is read from sample_data/ and labeled as sample data. Once you save any real
-table, sample data is switched off everywhere and tables you have not filled
-yet show as empty.
+Each brand's real data lives in data/<brand-id>/, one CSV per table, such as
+data/travel-noire/audience.csv. The example brand shows the made-up files in
+sample_data/ until real data is saved for it. Real brands never show sample
+data, so made-up numbers can't sit next to real ones.
 """
 
 from __future__ import annotations
@@ -15,7 +14,8 @@ from pathlib import Path
 import pandas as pd
 
 from . import config, schemas
-from .schemas import DATE, FLOAT, INT, RATE, TEXT, Dataset
+from .brands import EXAMPLE_BRAND, Brand
+from .schemas import CHANNEL, DATE, FLOAT, INT, RATE, Dataset
 
 YOUR_DATA = "your data"
 SAMPLE = "sample data"
@@ -34,8 +34,8 @@ class Table:
         return self.origin == SAMPLE
 
 
-def data_path(name: str) -> Path:
-    return config.DATA_DIR / f"{name}.csv"
+def data_path(name: str, brand: Brand) -> Path:
+    return brand.data_dir / f"{name}.csv"
 
 
 def sample_path(name: str) -> Path:
@@ -65,21 +65,15 @@ def coerce(df: pd.DataFrame, ds: Dataset) -> pd.DataFrame:
     return out[ds.column_names + extras]
 
 
-def has_own_data() -> bool:
-    """True once any table has a file in the data folder."""
-    return any(data_path(name).exists() for name in schemas.DATASETS)
+def has_own_data(brand: Brand) -> bool:
+    return any(data_path(name, brand).exists() for name in schemas.DATASETS)
 
 
-def load(name: str, allow_sample: bool | None = None) -> Table:
-    """Load one table from data/, else from sample_data/.
-
-    Sample data is all or nothing: it is only used while the data folder has
-    no tables at all, so sample numbers never sit next to real ones.
-    """
+def load(name: str, brand: Brand, allow_sample: bool | None = None) -> Table:
     ds = schemas.get(name)
     if allow_sample is None:
-        allow_sample = not has_own_data()
-    candidates = [(data_path(name), YOUR_DATA)]
+        allow_sample = brand.id == EXAMPLE_BRAND and not has_own_data(brand)
+    candidates = [(data_path(name, brand), YOUR_DATA)]
     if allow_sample:
         candidates.append((sample_path(name), SAMPLE))
     for path, origin in candidates:
@@ -89,13 +83,13 @@ def load(name: str, allow_sample: bool | None = None) -> Table:
     return Table(ds, empty_frame(ds), EMPTY, None)
 
 
-def load_all() -> dict[str, Table]:
-    allow_sample = not has_own_data()
-    return {name: load(name, allow_sample) for name in schemas.DATASETS}
+def load_all(brand: Brand) -> dict[str, Table]:
+    allow_sample = brand.id == EXAMPLE_BRAND and not has_own_data(brand)
+    return {name: load(name, brand, allow_sample) for name in schemas.DATASETS}
 
 
-def validate(df: pd.DataFrame, ds: Dataset) -> tuple[pd.DataFrame, list[str]]:
-    """Check an uploaded or typed-in table against its schema.
+def validate(df: pd.DataFrame, ds: Dataset, brand: Brand) -> tuple[pd.DataFrame, list[str]]:
+    """Check an uploaded or typed-in table against its schema and the brand's channels.
 
     Returns the cleaned table and a list of problems in plain words. An empty
     list means the rows are safe to save.
@@ -139,6 +133,14 @@ def validate(df: pd.DataFrame, ds: Dataset) -> tuple[pd.DataFrame, list[str]]:
             if len(wrong):
                 problems.append(f"{col.name}: '{wrong.iloc[0]}' is not one of: {', '.join(col.choices)}.")
             clean[col.name] = clean[col.name].str.lower()
+        if col.kind == CHANNEL:
+            vals = clean[col.name].dropna()
+            wrong = vals[~vals.isin(brand.channel_ids)]
+            if len(wrong):
+                problems.append(
+                    f"channel: '{wrong.iloc[0]}' is not a channel of {brand.name}. "
+                    f"Use one of: {', '.join(brand.channel_ids)}, or add it to brands/{brand.id}.toml."
+                )
 
     dupes = clean.duplicated(subset=list(ds.key), keep=False)
     if dupes.any():
@@ -154,20 +156,20 @@ def to_csv_frame(df: pd.DataFrame, ds: Dataset) -> pd.DataFrame:
     return out
 
 
-def save(name: str, new_rows: pd.DataFrame, mode: str = "append") -> int:
-    """Write rows to data/<name>.csv and return how many rows the file now has.
+def save(name: str, new_rows: pd.DataFrame, brand: Brand, mode: str = "append") -> int:
+    """Write rows to data/<brand>/<name>.csv and return how many rows the file now has.
 
-    mode="append" adds the rows to your existing data. A new row with the same
-    key as an existing one updates it: filled-in values win, and blank values
-    keep what was there, so a Buffer pull does not wipe LinkedIn clicks that
-    came from an export. mode="replace" overwrites the file.
-    Sample data is never written to or merged in.
+    mode="append" adds the rows to the brand's existing data. A new row with
+    the same key as an existing one updates it: filled-in values win, and blank
+    values keep what was there (with their source), so a Buffer pull does not
+    wipe clicks that came from a platform export. mode="replace" overwrites the
+    file. Sample data is never written to or merged in.
     """
     ds = schemas.get(name)
     new_rows = coerce(new_rows, ds)
-    path = data_path(name)
+    path = data_path(name, brand)
     if mode == "append" and path.exists():
-        current = load(name, allow_sample=False).df
+        current = load(name, brand, allow_sample=False).df
         key = list(ds.key)
         new_rows = new_rows.drop_duplicates(subset=key, keep="last").set_index(key)
         current = current.drop_duplicates(subset=key, keep="last").set_index(key)
@@ -185,7 +187,7 @@ def save(name: str, new_rows: pd.DataFrame, mode: str = "append") -> int:
     else:
         combined = new_rows
     combined = combined.sort_values(ds.date_column, ascending=False, na_position="last")
-    config.DATA_DIR.mkdir(parents=True, exist_ok=True)
+    path.parent.mkdir(parents=True, exist_ok=True)
     to_csv_frame(combined, ds).to_csv(path, index=False)
     return len(combined)
 

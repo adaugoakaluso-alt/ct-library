@@ -1,6 +1,6 @@
-"""Update data: CSV upload, one-row entry forms and connector pulls.
+"""Update data: CSV upload, one-row entry forms, platform exports and connector pulls.
 
-Everything saves through storage.save(), which writes to data/<table>.csv.
+Everything saves through storage.save(), which writes to data/<brand>/<table>.csv.
 """
 
 from __future__ import annotations
@@ -11,9 +11,10 @@ import pandas as pd
 import streamlit as st
 
 from .. import config, importers, schemas, storage
+from ..brands import Brand
 from ..components import Filters, show_table
 from ..connectors import REGISTRY, ConnectorError
-from ..schemas import DATE, FLOAT, INT, RATE, Dataset
+from ..schemas import CHANNEL, DATE, FLOAT, INT, RATE, Dataset
 from ..storage import Table
 
 FLASH = "update_data_flash"
@@ -24,8 +25,9 @@ def _flash(msg: str) -> None:
     st.rerun()
 
 
-def _schema_table(ds: Dataset) -> pd.DataFrame:
-    kinds = {DATE: "date (YYYY-MM-DD)", INT: "whole number", FLOAT: "number", RATE: "rate as a share (0.179 = 17.9%)"}
+def _schema_table(ds: Dataset, brand: Brand) -> pd.DataFrame:
+    kinds = {DATE: "date (YYYY-MM-DD)", INT: "whole number", FLOAT: "number", RATE: "rate as a share (0.179 = 17.9%)",
+             CHANNEL: "channel id: " + ", ".join(brand.channel_ids)}
     return pd.DataFrame([{
         "Column": c.name,
         "Type": kinds.get(c.kind, "text") + (f": {', '.join(c.choices)}" if c.choices else ""),
@@ -34,10 +36,10 @@ def _schema_table(ds: Dataset) -> pd.DataFrame:
     } for c in ds.columns])
 
 
-def _upload(ds: Dataset, table: Table) -> None:
+def _upload(ds: Dataset, table: Table, brand: Brand) -> None:
     file = st.file_uploader(f"CSV file for {ds.title}", type=["csv"], key=f"up-{ds.name}")
     if not file:
-        st.caption("The first row must hold the column names. Download the template below if you need one.")
+        st.caption("The first row must hold the column names. Download the template on the Columns and template tab if you need one.")
         return
     try:
         raw = pd.read_csv(file, dtype=str, keep_default_na=False, na_values=[""])
@@ -46,7 +48,7 @@ def _upload(ds: Dataset, table: Table) -> None:
         return
     if "source" not in raw.columns or raw["source"].isna().all():
         raw["source"] = f"CSV upload, {date.today().isoformat()}"
-    clean, problems = storage.validate(raw, ds)
+    clean, problems = storage.validate(raw, ds, brand)
     if problems:
         st.error("Fix these and upload again:\n\n" + "\n".join(f"- {p}" for p in problems))
         return
@@ -57,48 +59,56 @@ def _upload(ds: Dataset, table: Table) -> None:
         "How to save",
         ["Add to my data", "Replace all my data for this table"] if has_own else ["Save as my data"],
         key=f"mode-{ds.name}",
-        help="Adding keeps your existing rows. A new row with the same " + " + ".join(ds.key) + " replaces the old one.",
+        help="Adding keeps your existing rows. A new row with the same " + " + ".join(ds.key) + " updates the old one.",
     )
     if st.button("Save rows", key=f"save-up-{ds.name}", type="primary"):
-        total = storage.save(ds.name, clean, "replace" if mode.startswith("Replace") else "append")
+        total = storage.save(ds.name, clean, brand, "replace" if mode.startswith("Replace") else "append")
         _flash(f"Saved. {ds.title} now has {total} rows.")
 
 
-def _linkedin_export(table: Table) -> None:
+def _linkedin_export(table: Table, brand: Brand) -> None:
+    channels = brand.on_platform("linkedin")
+    if not channels:
+        return
     st.subheader("Or upload a LinkedIn content export")
     st.caption(
         "On your LinkedIn company page, go to Analytics > Content and click Export. Upload that file here as it is. "
         "Posts already pulled from Buffer get LinkedIn's clicks, impressions and reactions. New posts are added."
     )
+    channel = channels[0] if len(channels) == 1 else st.selectbox("LinkedIn channel", channels, format_func=lambda c: c.name, key="li-channel")
     file = st.file_uploader("LinkedIn content export (.xls or .xlsx)", type=["xls", "xlsx"], key="up-linkedin-export")
     if not file:
         return
     try:
-        export = importers.read_linkedin_content_export(file)
+        export = importers.read_linkedin_content_export(file, channel.id)
     except importers.ImportProblem as exc:
         st.error(str(exc))
         return
     existing = table.df if table.origin == storage.YOUR_DATA else storage.empty_frame(table.dataset)
-    merged, updated, added = importers.merge_linkedin_export(existing, export)
-    clean, problems = storage.validate(merged, table.dataset)
+    merged, updated, added = importers.merge_linkedin_export(existing, export, channel.id)
+    clean, problems = storage.validate(merged, table.dataset, brand)
     if problems:
         st.error("Not saved:\n\n" + "\n".join(f"- {p}" for p in problems))
         return
     st.success(f"{len(export)} LinkedIn posts read. {updated} match posts already here and will be updated. {added} are new.")
     show_table(export.drop(columns=["post_id"]).head(50))
     if st.button("Save LinkedIn numbers", key="save-linkedin-export", type="primary"):
-        total = storage.save(table.dataset.name, clean, "replace")
+        total = storage.save(table.dataset.name, clean, brand, "replace")
         _flash(f"Saved. Updated {updated} LinkedIn posts and added {added}. The posts table now has {total} rows.")
 
 
-def _form(ds: Dataset) -> None:
+def _form(ds: Dataset, brand: Brand) -> None:
+    channels = [c for c in brand.channels if c.kind in ds.kinds]
     with st.form(f"form-{ds.name}", clear_on_submit=True):
         values: dict = {}
         cols = st.columns(2)
         for i, c in enumerate(col for col in ds.columns if col.name != "source"):
             label = c.name + ("" if c.required else " (optional)")
             with cols[i % 2]:
-                if c.kind == DATE:
+                if c.kind == CHANNEL:
+                    picked = st.selectbox(label, channels, format_func=lambda ch: ch.name, help=c.help)
+                    values[c.name] = picked.id if picked else None
+                elif c.kind == DATE:
                     values[c.name] = st.date_input(label, value=date.today(), help=c.help, format="YYYY-MM-DD")
                 elif c.choices:
                     values[c.name] = st.selectbox(label, c.choices, help=c.help)
@@ -116,17 +126,21 @@ def _form(ds: Dataset) -> None:
         values["source"] = st.text_input("source", value="Manual entry", help=schemas.SOURCE.help)
         if st.form_submit_button("Save row", type="primary"):
             row = pd.DataFrame([{k: ("" if v is None else str(v)) for k, v in values.items()}])
-            clean, problems = storage.validate(row, ds)
+            clean, problems = storage.validate(row, ds, brand)
             if problems:
                 st.error("Not saved:\n\n" + "\n".join(f"- {p}" for p in problems))
             else:
-                total = storage.save(ds.name, clean, "append")
+                total = storage.save(ds.name, clean, brand, "append")
                 _flash(f"Saved. {ds.title} now has {total} rows.")
 
 
-def _connectors(tables: dict[str, Table], f: Filters) -> None:
+def _connectors(f: Filters) -> None:
+    brand = f.brand
     st.header("Pull from a connected source")
-    st.caption("Connectors fill a table automatically. Their settings come from environment variables, described in .env.example.")
+    st.caption(
+        "Connectors fill a table automatically. Their settings come from environment variables, described in .env.example. "
+        f"A setting that starts with {config.brand_prefix(brand.id)} applies to {brand.name} only."
+    )
     for conn in REGISTRY:
         ds = schemas.get(conn.dataset)
         with st.container(border=True):
@@ -135,7 +149,7 @@ def _connectors(tables: dict[str, Table], f: Filters) -> None:
             if not conn.implemented:
                 st.caption("Status: not built yet.")
                 continue
-            missing = conn.missing_settings()
+            missing = conn.missing_settings(brand)
             if missing:
                 st.caption("Status: not set up. Missing settings: " + ", ".join(missing) + ".")
                 continue
@@ -145,49 +159,50 @@ def _connectors(tables: dict[str, Table], f: Filters) -> None:
             if st.button(f"Pull from {conn.name}", key=f"pull-{conn.name}", type="primary"):
                 try:
                     with st.spinner(f"Pulling from {conn.name}"):
-                        rows = conn.fetch(start, end)
+                        rows = conn.fetch(start, end, brand)
                 except ConnectorError as exc:
                     st.error(str(exc))
                     continue
                 if rows.empty:
-                    st.info("Nothing came back for those dates.")
+                    st.info("Nothing came back for those dates and channels.")
                     continue
-                clean, problems = storage.validate(rows, ds)
+                clean, problems = storage.validate(rows, ds, brand)
                 if problems:
                     st.error(f"{conn.name} sent rows that do not fit the {ds.title} table:\n\n" + "\n".join(f"- {p}" for p in problems))
                     continue
-                total = storage.save(ds.name, clean, "append")
+                total = storage.save(ds.name, clean, brand, "append")
                 _flash(f"Pulled {len(clean)} rows from {conn.name}. {ds.title} now has {total} rows.")
 
 
 def render(tables: dict[str, Table], f: Filters) -> None:
+    brand = f.brand
     st.title("Update data")
     if msg := st.session_state.pop(FLASH, None):
         st.success(msg)
     st.caption(
-        "Add numbers each reporting period. Saved rows go to the data folder in this repo, "
-        f"which git ignores, so your numbers stay off GitHub. Data folder: {config.DATA_DIR.relative_to(config.REPO_ROOT) if config.DATA_DIR.is_relative_to(config.REPO_ROOT) else config.DATA_DIR}"
+        f"Add {brand.name}'s numbers each reporting period. Saved rows go to data/{brand.id}/ in this repo, "
+        f"which git ignores, so your numbers stay off GitHub. Channels come from brands/{brand.id}.toml."
     )
 
-    names = list(schemas.DATASETS)
+    kinds = {c.kind for c in brand.channels}
+    names = [n for n, ds in schemas.DATASETS.items() if kinds.intersection(ds.kinds)]
     name = st.selectbox("Table", names, format_func=lambda n: schemas.get(n).title)
     ds = schemas.get(name)
     table = tables[name]
-    status = {storage.SAMPLE: "showing sample data until you add your own", storage.EMPTY: "empty"}.get(table.origin, f"{len(table.df)} rows of your data")
+    status = {storage.SAMPLE: "showing sample data", storage.EMPTY: "empty"}.get(table.origin, f"{len(table.df)} rows of your data")
     st.caption(f"{ds.description} Where to get it: {ds.where_to_get_it} Right now: {status}.")
 
     tab_upload, tab_form, tab_schema = st.tabs(["Upload a CSV", "Enter one row", "Columns and template"])
     with tab_upload:
-        _upload(ds, table)
-        if name == "social_posts":
-            _linkedin_export(table)
+        _upload(ds, table, brand)
+        if name == "posts":
+            _linkedin_export(table, brand)
     with tab_form:
-        _form(ds)
+        _form(ds, brand)
     with tab_schema:
-        show_table(_schema_table(ds))
+        show_table(_schema_table(ds, brand))
         st.caption("Each row is unique by: " + " + ".join(ds.key) + ".")
-        st.download_button(
-            "Download empty template", storage.template_csv(name), file_name=f"{name}.csv", mime="text/csv", key=f"tpl-{name}"
-        )
+        st.download_button("Download empty template", storage.template_csv(name), file_name=f"{name}.csv",
+                           mime="text/csv", key=f"tpl-{name}")
 
-    _connectors(tables, f)
+    _connectors(f)
