@@ -1,0 +1,43 @@
+cta_id,date,channel,cta,where_used,clicks,measure,keyword,link,source
+sample-1012-2,2026-10-12,newsletter,Want the cheat sheet?,"Email, Resources section",8,Unique link clicks,,Sample free PDF guide,Sample data
+sample-1012-1,2026-10-12,newsletter,Will this save you an hour?,"Email, Tools section",15,Unique link clicks,,Sample tool of the week,Sample data
+sample-1012-0,2026-10-12,newsletter,Sample industry story,"Email, Story section",3,Unique link clicks,,Sample industry story,Sample data
+sample-1005-2,2026-10-05,newsletter,Want the cheat sheet?,"Email, Resources section",9,Unique link clicks,,Sample free PDF guide,Sample data
+sample-1005-1,2026-10-05,newsletter,Sample certification guide,"Email, Go Deeper section",2,Unique link clicks,,Sample certification guide,Sample data
+sample-1005-0,2026-10-05,newsletter,Sample industry story,"Email, Story section",2,Unique link clicks,,Sample industry story,Sample data
+sample-0928-2,2026-09-28,newsletter,Sample industry story,"Email, Story section",6,Unique link clicks,,Sample industry story,Sample data
+sample-0928-1,2026-09-28,newsletter,Sample certification guide,"Email, Go Deeper section",15,Unique link clicks,,Sample certification guide,Sample data
+sample-0928-0,2026-09-28,newsletter,Save your seat?,"Email, Events section",8,Unique link clicks,,Free AI training RSVP,Sample data
+sample-0921-2,2026-09-21,newsletter,Save your seat?,"Email, Events section",4,Unique link clicks,,Free AI training RSVP,Sample data
+sample-0921-1,2026-09-21,newsletter,Will this save you an hour?,"Email, Tools section",13,Unique link clicks,,Sample tool of the week,Sample data
+sample-0921-0,2026-09-21,newsletter,Sample certification guide,"Email, Go Deeper section",12,Unique link clicks,,Sample certification guide,Sample data
+sample-0914-2,2026-09-14,newsletter,Want the cheat sheet?,"Email, Resources section",6,Unique link clicks,,Sample free PDF guide,Sample data
+sample-0914-1,2026-09-14,newsletter,Sample industry story,"Email, Story section",8,Unique link clicks,,Sample industry story,Sample data
+sample-0914-0,2026-09-14,newsletter,Sample certification guide,"Email, Go Deeper section",15,Unique link clicks,,Sample certification guide,Sample data
+sample-0907-2,2026-09-07,newsletter,Sample industry story,"Email, Story section",7,Unique link clicks,,Sample industry story,Sample data
+sample-0907-1,2026-09-07,newsletter,Will this save you an hour?,"Email, Tools section",9,Unique link clicks,,Sample tool of the week,Sample data
+sample-0907-0,2026-09-07,newsletter,Save your seat?,"Email, Events section",11,Unique link clicks,,Free AI training RSVP,Sample data
+mc-2026-10-12-register,2026-10-12,instagram,"Comment ""REGISTER""",DM automation,16,DM link clicks,REGISTER,Event registration,Sample data
+mc-2026-10-12-guide,2026-10-12,instagram,"Comment ""GUIDE""",DM automation,4,DM link clicks,GUIDE,Free PDF guide,Sample data
+mc-2026-10-12-ai-news,2026-10-12,instagram,"Comment ""AI NEWS""",DM automation,25,DM link clicks,AI NEWS,Newsletter sign-up,Sample data
+mc-2026-10-05-register,2026-10-05,instagram,"Comment ""REGISTER""",DM automation,23,DM link clicks,REGISTER,Event registration,Sample data
+mc-2026-10-05-guide,2026-10-05,instagram,"Comment ""GUIDE""",DM automation,22,DM link clicks,GUIDE,Free PDF guide,Sample data
+mc-2026-10-05-ai-news,2026-10-05,instagram,"Comment ""AI NEWS""",DM automation,13,DM link clicks,AI NEWS,Newsletter sign-up,Sample data
+mc-2026-09-28-register,2026-09-28,instagram,"Comment ""REGISTER""",DM automation,16,DM link clicks,REGISTER,Event registration,Sample data
+mc-2026-09-28-guide,2026-09-28,instagram,"Comment ""GUIDE""",DM automation,20,DM link clicks,GUIDE,Free PDF guide,Sample data
+mc-2026-09-28-ai-news,2026-09-28,instagram,"Comment ""AI NEWS""",DM automation,22,DM link clicks,AI NEWS,Newsletter sign-up,Sample data
+mc-2026-09-21-register,2026-09-21,instagram,"Comment ""REGISTER""",DM automation,4,DM link clicks,REGISTER,Event registration,Sample data
+mc-2026-09-21-guide,2026-09-21,instagram,"Comment ""GUIDE""",DM automation,1,DM link clicks,GUIDE,Free PDF guide,Sample data
+mc-2026-09-21-ai-news,2026-09-21,instagram,"Comment ""AI NEWS""",DM automation,20,DM link clicks,AI NEWS,Newsletter sign-up,Sample data
+mc-2026-09-14-register,2026-09-14,instagram,"Comment ""REGISTER""",DM automation,23,DM link clicks,REGISTER,Event registration,Sample data
+mc-2026-09-14-guide,2026-09-14,instagram,"Comment ""GUIDE""",DM automation,19,DM link clicks,GUIDE,Free PDF guide,Sample data
+mc-2026-09-14-ai-news,2026-09-14,instagram,"Comment ""AI NEWS""",DM automation,9,DM link clicks,AI NEWS,Newsletter sign-up,Sample data
+mc-2026-09-07-register,2026-09-07,instagram,"Comment ""REGISTER""",DM automation,15,DM link clicks,REGISTER,Event registration,Sample data
+mc-2026-09-07-guide,2026-09-07,instagram,"Comment ""GUIDE""",DM automation,4,DM link clicks,GUIDE,Free PDF guide,Sample data
+mc-2026-09-07-ai-news,2026-09-07,instagram,"Comment ""AI NEWS""",DM automation,23,DM link clicks,AI NEWS,Newsletter sign-up,Sample data
+mc-2026-08-31-register,2026-08-31,instagram,"Comment ""REGISTER""",DM automation,24,DM link clicks,REGISTER,Event registration,Sample data
+mc-2026-08-31-guide,2026-08-31,instagram,"Comment ""GUIDE""",DM automation,10,DM link clicks,GUIDE,Free PDF guide,Sample data
+mc-2026-08-31-ai-news,2026-08-31,instagram,"Comment ""AI NEWS""",DM automation,12,DM link clicks,AI NEWS,Newsletter sign-up,Sample data
+mc-2026-08-24-register,2026-08-24,instagram,"Comment ""REGISTER""",DM automation,25,DM link clicks,REGISTER,Event registration,Sample data
+mc-2026-08-24-guide,2026-08-24,instagram,"Comment ""GUIDE""",DM automation,19,DM link clicks,GUIDE,Free PDF guide,Sample data
+mc-2026-08-24-ai-news,2026-08-24,instagram,"Comment ""AI NEWS""",DM automation,22,DM link clicks,AI NEWS,Newsletter sign-up,Sample data

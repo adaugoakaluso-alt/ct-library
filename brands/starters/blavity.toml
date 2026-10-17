@@ -1,0 +1,55 @@
+# Starter file for Blavity: the content platforms from the brand accounts list.
+# Copy it to brands/ to use it, then add, remove or rename channels.
+# Add a newsletter channel (platform = "newsletter") if the brand sends one.
+
+name = "Blavity"
+
+[[channels]]
+id = "facebook"
+name = "Facebook"
+platform = "facebook"
+
+[[channels]]
+id = "x"
+name = "X (Twitter)"
+platform = "x"
+
+[[channels]]
+id = "instagram"
+name = "Instagram"
+platform = "instagram"
+
+[[channels]]
+id = "tiktok"
+name = "TikTok"
+platform = "tiktok"
+
+[[channels]]
+id = "snapchat"
+name = "Snapchat"
+platform = "snapchat"
+
+[[channels]]
+id = "tumblr"
+name = "Tumblr"
+platform = "tumblr"
+
+[[channels]]
+id = "giphy"
+name = "Giphy"
+platform = "giphy"
+
+[[channels]]
+id = "pinterest"
+name = "Pinterest"
+platform = "pinterest"
+
+[[channels]]
+id = "flipboard"
+name = "Flipboard"
+platform = "flipboard"
+
+[[channels]]
+id = "reddit"
+name = "Reddit"
+platform = "reddit"

@@ -1,0 +1,15 @@
+# Starter file for Lunchtable: the content platforms from the brand accounts list.
+# Copy it to brands/ to use it, then add, remove or rename channels.
+# Add a newsletter channel (platform = "newsletter") if the brand sends one.
+
+name = "Lunchtable"
+
+[[channels]]
+id = "instagram"
+name = "Instagram"
+platform = "instagram"
+
+[[channels]]
+id = "x"
+name = "X (Twitter)"
+platform = "x"

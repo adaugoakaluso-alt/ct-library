@@ -1,0 +1,29 @@
+# AI Edge, Blavity's AI training brand.
+
+name = "AI Edge"
+title = "AI Edge content reporting"
+
+[[channels]]
+id = "newsletter"
+name = "Newsletter"
+platform = "newsletter"
+color = "#2F6FDB"
+
+[[channels]]
+id = "instagram"
+name = "Instagram"
+platform = "instagram"
+handle = "@ai.edge.workshops"
+color = "#C2417A"
+
+[[channels]]
+id = "linkedin"
+name = "LinkedIn"
+platform = "linkedin"
+color = "#0F8B8D"
+
+[[channels]]
+id = "substack"
+name = "Substack"
+platform = "substack"
+color = "#D9822B"

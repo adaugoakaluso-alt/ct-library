@@ -1,0 +1,15 @@
+# Starter file for BlavityShop: the content platforms from the brand accounts list.
+# Copy it to brands/ to use it, then add, remove or rename channels.
+# Add a newsletter channel (platform = "newsletter") if the brand sends one.
+
+name = "BlavityShop"
+
+[[channels]]
+id = "x"
+name = "X (Twitter)"
+platform = "x"
+
+[[channels]]
+id = "instagram"
+name = "Instagram"
+platform = "instagram"

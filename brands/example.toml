@@ -1,0 +1,30 @@
+# Example brand. Its numbers are made up (sample_data/) so a fresh copy of the
+# repo shows a working dashboard. Copy this file to brands/<your-brand>.toml to
+# start your own, or start from one of the files in brands/starters/.
+
+name = "Example Brand"
+
+[[channels]]
+id = "newsletter"
+name = "Newsletter"
+platform = "newsletter"
+
+[[channels]]
+id = "instagram"
+name = "Instagram"
+platform = "instagram"
+
+[[channels]]
+id = "tiktok"
+name = "TikTok"
+platform = "tiktok"
+
+[[channels]]
+id = "linkedin"
+name = "LinkedIn"
+platform = "linkedin"
+
+[[channels]]
+id = "substack"
+name = "Substack"
+platform = "substack"

@@ -1,0 +1,40 @@
+# Starter file for Travel Noire: the content platforms from the brand accounts list.
+# Copy it to brands/ to use it, then add, remove or rename channels.
+# Add a newsletter channel (platform = "newsletter") if the brand sends one.
+
+name = "Travel Noire"
+
+[[channels]]
+id = "facebook"
+name = "Facebook"
+platform = "facebook"
+
+[[channels]]
+id = "x"
+name = "X (Twitter)"
+platform = "x"
+
+[[channels]]
+id = "instagram"
+name = "Instagram"
+platform = "instagram"
+
+[[channels]]
+id = "tiktok"
+name = "TikTok"
+platform = "tiktok"
+
+[[channels]]
+id = "pinterest"
+name = "Pinterest"
+platform = "pinterest"
+
+[[channels]]
+id = "tn-plus-instagram"
+name = "TN Plus Instagram"
+platform = "instagram"
+
+[[channels]]
+id = "flipboard"
+name = "Flipboard"
+platform = "flipboard"

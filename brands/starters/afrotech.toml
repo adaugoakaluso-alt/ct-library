@@ -1,0 +1,35 @@
+# Starter file for AfroTech: the content platforms from the brand accounts list.
+# Copy it to brands/ to use it, then add, remove or rename channels.
+# Add a newsletter channel (platform = "newsletter") if the brand sends one.
+
+name = "AfroTech"
+
+[[channels]]
+id = "facebook"
+name = "Facebook"
+platform = "facebook"
+
+[[channels]]
+id = "x"
+name = "X (Twitter)"
+platform = "x"
+
+[[channels]]
+id = "instagram"
+name = "Instagram"
+platform = "instagram"
+
+[[channels]]
+id = "spill"
+name = "Spill"
+platform = "spill"
+
+[[channels]]
+id = "tiktok"
+name = "TikTok"
+platform = "tiktok"
+
+[[channels]]
+id = "giphy"
+name = "Giphy"
+platform = "giphy"
