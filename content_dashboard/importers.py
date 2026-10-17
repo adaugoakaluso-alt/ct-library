@@ -95,7 +95,9 @@ def merge_linkedin_export(existing: pd.DataFrame, export: pd.DataFrame) -> tuple
     for _, row in export.iterrows():
         key = _match_key(row["text"])
         when = pd.to_datetime(row["date"])
-        hits = li.index[(keys == key) & ((dates - when).abs() <= pd.Timedelta(days=1))] if key else []
+        # Same opening words: equal keys, or one is the start of the other (a shortened copy of the post).
+        same_text = keys.map(lambda k: bool(key) and min(len(k), len(key)) >= 20 and (k.startswith(key) or key.startswith(k)))
+        hits = li.index[same_text & ((dates - when).abs() <= pd.Timedelta(days=1))] if key else []
         if len(hits):
             i = hits[0]
             for col in METRIC_COLUMNS:

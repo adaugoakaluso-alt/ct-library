@@ -79,3 +79,16 @@ def test_append_keeps_values_a_new_row_leaves_blank(tmp_path, monkeypatch):
     storage.save("social_posts", later)
     row = storage.load("social_posts").df.set_index("post_id").loc["p1"]
     assert row["likes"] == 3 and row["clicks"] == 9
+
+
+def test_merge_matches_a_shortened_copy_of_the_post_text():
+    existing = storage.coerce(pd.DataFrame([
+        {"post_id": "buf-9", "date": "2026-10-06", "channel": "linkedin", "format": "video",
+         "text": "One tool worth testing : Napkin AI. You paste your notes, highlight the section you want", "source": "Buffer"},
+    ]), schemas.get("social_posts"))
+    pasted = pd.DataFrame([{"post_id": "li-x", "date": "2026-10-06", "channel": "linkedin", "format": "video",
+                            "text": "One tool worth testing : Napkin AI.", "source": "LinkedIn", "impressions": 29,
+                            "views": 5, "clicks": 0, "likes": 0, "comments": 0, "shares": 0}])
+    merged, updated, added = importers.merge_linkedin_export(existing, pasted)
+    assert (updated, added) == (1, 0)
+    assert merged.set_index("post_id").loc["buf-9", "impressions"] == 29
