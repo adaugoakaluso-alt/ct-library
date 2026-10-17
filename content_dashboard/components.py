@@ -45,7 +45,7 @@ def origin_note(*tables: Table) -> None:
     sample = [t.dataset.title for t in tables if t.origin == SAMPLE]
     empty = [t.dataset.title for t in tables if t.origin == EMPTY]
     if sample:
-        st.info("Showing sample data, not real AI Edge numbers. Save your first real numbers on the Update data page and sample data turns off.")
+        st.info("Showing sample data, not your real numbers. Save your first real numbers on the Update data page and sample data turns off.")
     if empty:
         st.warning("No data yet for: " + ", ".join(empty) + ". Add it on the Update data page.")
 

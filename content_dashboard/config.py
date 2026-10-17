@@ -30,8 +30,6 @@ DATA_DIR = _repo_path(os.getenv("AI_EDGE_DATA_DIR", "data"))
 # Fake sample data, committed so a fresh clone runs straight away.
 SAMPLE_DIR = REPO_ROOT / "sample_data"
 
-APP_TITLE = "AI Edge content reporting"
-
 # Channel ids used in every CSV, and the names shown in the app.
 CHANNELS = {
     "newsletter": "Newsletter",
@@ -60,3 +58,7 @@ def env(name: str, default: str | None = None) -> str | None:
     if value is None or str(value).strip() == "":
         return default
     return str(value).strip()
+
+
+# Shown in the browser tab and the sidebar. Each team sets its own in .env.
+APP_TITLE = env("APP_TITLE", "Content reporting")

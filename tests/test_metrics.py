@@ -2,7 +2,7 @@ from datetime import date
 
 import pandas as pd
 
-from ai_edge_dashboard import metrics, schemas, storage
+from content_dashboard import metrics, schemas, storage
 
 
 def posts(rows):

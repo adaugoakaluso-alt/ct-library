@@ -1,6 +1,6 @@
 import pandas as pd
 
-from ai_edge_dashboard import config, schemas, storage
+from content_dashboard import config, schemas, storage
 
 
 def test_validate_reports_missing_columns():

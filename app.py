@@ -1,4 +1,4 @@
-"""AI Edge content reporting dashboard.
+"""Content reporting dashboard.
 
 Run with:  streamlit run app.py
 """
@@ -10,9 +10,9 @@ from datetime import date
 import pandas as pd
 import streamlit as st
 
-from ai_edge_dashboard import config, storage
-from ai_edge_dashboard.components import Filters
-from ai_edge_dashboard.views import data_log, general, qualitative, update_data
+from content_dashboard import config, storage
+from content_dashboard.components import Filters
+from content_dashboard.views import data_log, general, qualitative, update_data
 
 st.set_page_config(page_title=config.APP_TITLE, layout="wide")
 

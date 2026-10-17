@@ -67,7 +67,7 @@ def _upload(ds: Dataset, table: Table) -> None:
 def _linkedin_export(table: Table) -> None:
     st.subheader("Or upload a LinkedIn content export")
     st.caption(
-        "On the AI Edge LinkedIn page, go to Analytics > Content and click Export. Upload that file here as it is. "
+        "On your LinkedIn company page, go to Analytics > Content and click Export. Upload that file here as it is. "
         "Posts already pulled from Buffer get LinkedIn's clicks, impressions and reactions. New posts are added."
     )
     file = st.file_uploader("LinkedIn content export (.xls or .xlsx)", type=["xls", "xlsx"], key="up-linkedin-export")

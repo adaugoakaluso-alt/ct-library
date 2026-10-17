@@ -2,7 +2,7 @@ import io
 
 import pandas as pd
 
-from ai_edge_dashboard import config, importers, schemas, storage
+from content_dashboard import config, importers, schemas, storage
 
 
 def linkedin_export(rows) -> io.BytesIO:

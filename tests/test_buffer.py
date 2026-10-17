@@ -8,8 +8,8 @@ from datetime import date
 
 import pandas as pd
 
-from ai_edge_dashboard import schemas, storage
-from ai_edge_dashboard.connectors import buffer
+from content_dashboard import schemas, storage
+from content_dashboard.connectors import buffer
 
 
 def node(i, service, post_type, assets, metrics, text=""):

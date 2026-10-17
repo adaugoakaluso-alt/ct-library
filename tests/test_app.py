@@ -10,9 +10,9 @@ PAGES = ["general", "qualitative", "data_log", "update_data"]
 
 PAGE_SCRIPT = """
 import datetime
-from ai_edge_dashboard import storage
-from ai_edge_dashboard.components import Filters
-from ai_edge_dashboard.views import {page}
+from content_dashboard import storage
+from content_dashboard.components import Filters
+from content_dashboard.views import {page}
 
 {page}.render(
     storage.load_all(),
@@ -24,7 +24,7 @@ from ai_edge_dashboard.views import {page}
 @pytest.fixture
 def sample_only(tmp_path, monkeypatch):
     # An empty data folder makes every table fall back to sample_data/.
-    from ai_edge_dashboard import config
+    from content_dashboard import config
     monkeypatch.setattr(config, "DATA_DIR", tmp_path)
 
 

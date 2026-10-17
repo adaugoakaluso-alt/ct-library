@@ -1,8 +1,8 @@
-# AI Edge content reporting
+# Content reporting dashboard
 
-A Streamlit dashboard for AI Edge, Blavity's AI training brand. It brings newsletter, Instagram, LinkedIn and Substack performance into one weekly and monthly report.
+A Streamlit dashboard that brings newsletter, Instagram, LinkedIn and Substack performance into one weekly and monthly report. It was built for AI Edge, Blavity's AI training brand, and is shared here so any team can run it with its own data. See [Setting it up for your team](#setting-it-up-for-your-team).
 
-It follows the AI Edge Content Conversion Question Bank and has four pages:
+The report has two parts: general reporting (subscriber growth, follower count, open rate, click-through rate) and qualitative reporting (best-performing CTAs, and Instagram static carousels against videos). The app has four pages:
 
 | Page | What it shows |
 | --- | --- |
@@ -18,15 +18,15 @@ Every number on the dashboard comes from a row you can see in the Data log. Noth
 You need Python 3.11 or newer.
 
 ```bash
-git clone <your-repo-url> ai-edge-dashboard
-cd ai-edge-dashboard
+git clone <your-repo-url> content-dashboard
+cd content-dashboard
 python -m venv .venv
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 streamlit run app.py
 ```
 
-The app opens at http://localhost:8501. A fresh clone has no real data, so it shows the files in `sample_data/` and says so on every page. These are made-up numbers for trying the app. As soon as you save your first real table, sample data turns off everywhere. Tables you have not filled yet then show as empty, so sample and real numbers never mix.
+The app opens at http://localhost:8501. A fresh clone has no real data, so it shows the files in `sample_data/` and says so on every page. These are made-up numbers for trying the app, not any team's real results. As soon as you save your first real table, sample data turns off everywhere. Tables you have not filled yet then show as empty, so sample and real numbers never mix.
 
 To run the tests:
 
@@ -34,6 +34,21 @@ To run the tests:
 pip install -r requirements-dev.txt
 pytest
 ```
+
+## Setting it up for your team
+
+Everything specific to one team lives in settings and data, not in the code. To use the dashboard for your own brand:
+
+1. **Copy the repo.** Fork it on GitHub, or clone it and push it to a new repo of your own.
+2. **Name it.** Copy `.env.example` to `.env` and set `APP_TITLE`, for example `APP_TITLE=Your Brand content reporting`. On Streamlit Community Cloud, put it in Secrets instead.
+3. **Add your numbers.** Run the app and use the Update data page. Upload CSVs that follow the schemas below, or fill in the forms. Sample data turns off as soon as you save your first real table.
+4. **Connect your accounts (optional).** For Buffer, set your own `BUFFER_API_KEY`, `BUFFER_ORGANIZATION_ID` and `BUFFER_CHANNEL_IDS`. For ManyChat clicks, set your own `MANYCHAT_SHEET_CSV_URL`.
+
+Things that adjust themselves: Instagram comment keywords (like `AI NEWS`) are read from your own captions, and CTAs come from your own link and ManyChat data.
+
+If your team does not use one of the four channels, leave its tables empty; its cards will say there is no data yet. To hide it, untick it under Channels in the sidebar. Channel display names and colors are in `content_dashboard/config.py`. Adding a new channel, such as TikTok, means adding it to `CHANNELS` in `config.py`, to the tables that hold it in `schemas.py`, and to the cards and charts in `views/general.py`.
+
+Your real data is saved in `data/`, which git ignores, so pushing your copy of the repo never publishes your numbers.
 
 ## Where your data lives
 
@@ -63,7 +78,7 @@ Rates are entered as shares in CSVs, so 17.9% is `0.179`. The entry forms take p
 
 ## CSV schemas
 
-Every CSV has a header row with these exact column names. Dates are `YYYY-MM-DD`. Columns marked optional can be blank. Every table ends with an optional `source` column that says where the row came from, such as `Iterable export` or `Manual entry`. The **Columns and template** tab on the Update data page has the same information and an empty template to download. The schemas are defined in `ai_edge_dashboard/schemas.py`.
+Every CSV has a header row with these exact column names. Dates are `YYYY-MM-DD`. Columns marked optional can be blank. Every table ends with an optional `source` column that says where the row came from, such as `Iterable export` or `Manual entry`. The **Columns and template** tab on the Update data page has the same information and an empty template to download. The schemas are defined in `content_dashboard/schemas.py`.
 
 ### newsletter_sends.csv
 
@@ -200,10 +215,10 @@ Community Cloud does not keep files between restarts. Rows saved in the app ther
 
 ## Adding the ManyChat API connector
 
-The connector framework is in `ai_edge_dashboard/connectors/`. A placeholder, `ManyChatApiConnector`, is already registered and shows on the Update data page as "not built yet". To build it:
+The connector framework is in `content_dashboard/connectors/`. A placeholder, `ManyChatApiConnector`, is already registered and shows on the Update data page as "not built yet". To build it:
 
 1. **Check what the API offers.** ManyChat's API key comes from Settings > API in ManyChat, and the reference is at https://api.manychat.com/swagger. At the time of writing, the public API covers contacts, tags, custom fields and flows, but not link-click statistics. If that is still true, have each flow store clicks somewhere the API can read. For example, increment a custom field per keyword with an action step, then read it back.
-2. **Write `fetch()`.** In `ai_edge_dashboard/connectors/manychat.py`, fill in `ManyChatApiConnector.fetch(start, end)`. It must return a pandas DataFrame with the `manychat_clicks` columns: `date`, `keyword`, `cta_text`, `link`, `clicks`, `source`. Set `source` to something like `ManyChat API, pulled 2026-10-20`. Raise `ConnectorError` with a plain message for anything the person can fix, such as a wrong key.
+2. **Write `fetch()`.** In `content_dashboard/connectors/manychat.py`, fill in `ManyChatApiConnector.fetch(start, end)`. It must return a pandas DataFrame with the `manychat_clicks` columns: `date`, `keyword`, `cta_text`, `link`, `clicks`, `source`. Set `source` to something like `ManyChat API, pulled 2026-10-20`. Raise `ConnectorError` with a plain message for anything the person can fix, such as a wrong key.
 3. **Turn it on.** Set `implemented = True` on the class. It reads `MANYCHAT_API_KEY` through `config.env()`. Add any other settings it needs to `required_env` and to `.env.example`.
 4. **Test it.** Add a test in `tests/` that mocks the HTTP call, like `tests/test_buffer.py` does, and checks that the rows pass `storage.validate()`.
 
@@ -213,7 +228,7 @@ Nothing else changes. The Update data page lists the connector and saves its row
 
 ```
 app.py                      Entry point: sidebar filters and page navigation
-ai_edge_dashboard/
+content_dashboard/
   config.py                 Paths, channel names, settings from environment variables
   schemas.py                One CSV schema per table
   storage.py                Load, validate and save CSVs
