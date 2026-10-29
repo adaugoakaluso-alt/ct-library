@@ -91,3 +91,16 @@ def test_merge_matches_a_shortened_copy_of_the_post_text():
     merged, updated, added = importers.merge_linkedin_export(existing, pasted)
     assert (updated, added) == (1, 0)
     assert merged.set_index("post_id").loc["buf-9", "impressions"] == 29
+
+
+def test_reimporting_an_export_updates_short_posts_instead_of_adding_them_again():
+    existing = storage.coerce(pd.DataFrame([
+        {"post_id": "li-7520587482292252672", "date": "2026-10-26", "channel": "linkedin", "format": "other",
+         "impressions": "11", "text": "Who's ready to go?", "source": "LinkedIn export 10/28"},
+    ]), schemas.get("posts"))
+    again = pd.DataFrame([{"post_id": "li-7520587482292252672", "date": "2026-10-26", "channel": "linkedin", "format": "other",
+                           "text": "Who's ready to go?", "source": "LinkedIn export 10/29", "impressions": 12,
+                           "views": None, "clicks": 0, "likes": 1, "comments": 0, "shares": 0}])
+    merged, updated, added = importers.merge_linkedin_export(existing, again)
+    assert (updated, added) == (1, 0)
+    assert len(merged) == 1 and merged.iloc[0]["impressions"] == 12

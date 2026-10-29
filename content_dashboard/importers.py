@@ -80,8 +80,9 @@ def read_linkedin_content_export(file, channel: str = "linkedin") -> pd.DataFram
 def merge_linkedin_export(existing: pd.DataFrame, export: pd.DataFrame, channel: str = "linkedin") -> tuple[pd.DataFrame, int, int]:
     """Fold LinkedIn export rows into the existing posts table.
 
-    A post already in the table (same text start, created within a day) keeps
-    its id and format and takes LinkedIn's numbers. Posts not in the table yet
+    A post already in the table (the same LinkedIn post id from an earlier
+    export, or the same text start created within a day) keeps its id and
+    format and takes LinkedIn's numbers. Posts not in the table yet
     are added. Returns the merged table, how many posts were updated and how
     many were added.
     """
@@ -97,7 +98,10 @@ def merge_linkedin_export(existing: pd.DataFrame, export: pd.DataFrame, channel:
         when = pd.to_datetime(row["date"])
         # Same opening words: equal keys, or one is the start of the other (a shortened copy of the post).
         same_text = keys.map(lambda k: bool(key) and min(len(k), len(key)) >= 20 and (k.startswith(key) or key.startswith(k)))
-        hits = li.index[same_text & ((dates - when).abs() <= pd.Timedelta(days=1))] if key else []
+        # A post added from an earlier export has the same id, even when its text is too short to match.
+        hits = li.index[li["post_id"] == row["post_id"]]
+        if not len(hits):
+            hits = li.index[same_text & ((dates - when).abs() <= pd.Timedelta(days=1))] if key else []
         if len(hits):
             i = hits[0]
             for col in METRIC_COLUMNS:
